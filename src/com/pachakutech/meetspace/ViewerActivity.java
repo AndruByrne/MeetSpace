@@ -23,6 +23,7 @@ import com.facebook.*;
 import org.json.*;
 import com.google.android.gms.common.*;
 import android.support.v4.app.*;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.Application;
 import android.content.*;
@@ -31,11 +32,10 @@ import com.parse.*;
 import com.google.android.gms.location.*;
 import com.google.android.gms.maps.model.*;
 
-public class ViewerActivity extends Activity implements LocationListener,
+public class ViewerActivity extends FragmentActivity implements LocationListener,
 GooglePlayServicesClient.ConnectionCallbacks,
 GooglePlayServicesClient.OnConnectionFailedListener {
 
-	private final String TAG = getClass( ).getSimpleName( );
 	private static final int TWELVE_SECONDS = 12000;
 	private LocationRequest locationRequest;
 	private LocationClient locationClient;
@@ -56,7 +56,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	private ParseGeoPoint userGeoPoint;
 	private int currentRadius = 3;
 	private boolean checkedAbove;
-
+	
 	@Override
 	protected void onCreate( Bundle savedInstanceState ) {
 		super.onCreate( savedInstanceState );
@@ -71,7 +71,6 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		userFriendsView = (TextView) findViewById( R.id.userFriends );
 		userRelationshipView = (TextView) findViewById( R.id.userRelationship );
 		userLatitude = (TextView) findViewById( R.id.userLatitude );
-
 
 		logoutButton = (Button) findViewById( R.id.logoutButton );
 		logoutButton.setOnClickListener( new View.OnClickListener( ) {
@@ -93,7 +92,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 			//eventually put case statement here
 			getFbId( );
 			makeFriendsRequest( );
-		} else Log.e( TAG, "no request made" );
+		} else Log.e( MeetSpace.TAG, "no request made" );
 	}
 
 	@Override
@@ -134,9 +133,9 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 					} else if( response.getError( ) != null ) {
 						if( ( response.getError( ).getCategory( ) == FacebookRequestError.Category.AUTHENTICATION_RETRY )
                            || ( response.getError( ).getCategory( ) == FacebookRequestError.Category.AUTHENTICATION_REOPEN_SESSION ) ) {
-							Log.d( TAG, "The facebook session was invalidated." );
+							Log.d( MeetSpace.TAG, "The facebook session was invalidated." );
 							onLogoutButtonClicked( );
-						} else Log.d( TAG, "Unknown error: " + response.getError( ).getErrorMessage( ) );
+						} else Log.d( MeetSpace.TAG, "Unknown error: " + response.getError( ).getErrorMessage( ) );
 					}
 				}
 			} );
@@ -156,18 +155,18 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 						ParseUser currentUser = ParseUser.getCurrentUser( );
 						currentUser.put( "friends", friends );
 						currentUser.saveInBackground( );
-						Log.e( TAG, "Uploaded friends list with " + friends.size( ) + " entries" );
+						Log.e( MeetSpace.TAG, "Uploaded friends list with " + friends.size( ) + " entries" );
 
 						// Show the user info
 						updateViewsWithSelfProfileInfo( );
 					} else if( response.getError( ) != null ) {
 						if( ( response.getError( ).getCategory( ) == FacebookRequestError.Category.AUTHENTICATION_RETRY )
                            || ( response.getError( ).getCategory( ) == FacebookRequestError.Category.AUTHENTICATION_REOPEN_SESSION ) ) {
-							Log.d( TAG,
+							Log.d( MeetSpace.TAG,
 								  "The facebook session was invalidated." );
 							onLogoutButtonClicked( );
 						} else {
-							Log.d( TAG,
+							Log.d( MeetSpace.TAG,
 								  "Some other error: "
 								  + response.getError( )
 								  .getErrorMessage( ) );
@@ -217,7 +216,26 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 							checkedAbove = true;
 							currentRadius--;
 							nearARoom( );
-						} else {//should give option to create new room if this radius is too big
+						} else if( count == 1 ){
+							AlertDialog.Builder builder = new AlertDialog.Builder(MeetSpace.getContext());
+							builder.setMessage(R.string.room_found + 
+							    Double.toString(SEARCH_RADIUS[currentRadius]*1000) + 
+								R.string.too_large_prompt);
+							builder.setPositiveButton("Yes", new DialogInterface.OnClickListener(){
+								public void onClick(DialogInterface dialog, int Id){
+									makeNewRoom();
+								}
+							});
+							builder.setNegativeButton("No", new DialogInterface.OnClickListener(){
+								public void onClick(DialogInterface dialog, int Id){
+									joinRoom();
+								}
+							});
+							AlertDialog dialog = builder.create();
+							ErrorDialogFragment errorFragment = new ErrorDialogFragment( );
+							errorFragment.setDialog( dialog );
+							errorFragment.show(getSupportFragmentManager(), MeetSpace.TAG);
+						} else {
 							joinRoom( );
 						}
 					}
@@ -500,7 +518,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		} else {
 
 			// If no resolution is available, display a dialog to the user with the error.
-			showErrorDialog( connectionResult.getErrorCode( ) );
+			showGoogleErrorDialog( connectionResult.getErrorCode( ) );
 		}
 	}
 
@@ -523,8 +541,9 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		lookForARoom( );
 	}
 
-	private void showErrorDialog( int errorCode ) {
+	private void showGoogleErrorDialog( int errorCode ) {
 		// Get the error dialog from Google Play services
+		
 		Dialog errorDialog =
 			GooglePlayServicesUtil.getErrorDialog( errorCode, this,
 												  CONNECTION_FAILURE_RESOLUTION_REQUEST );
@@ -539,7 +558,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 			errorFragment.setDialog( errorDialog );
 
 			// Show the error dialog in the DialogFragment
-			//	errorFragment.show(getSupportFragmentManager(), Application.APPTAG);
+			errorFragment.show(getSupportFragmentManager(), MeetSpace.TAG);
 		}
 	}
 	public static class ErrorDialogFragment extends DialogFragment {
