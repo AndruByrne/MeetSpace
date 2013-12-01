@@ -198,7 +198,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 							checkedAbove = true;
 							currentRadius--;
 							lookForARoom( );
-						} else if( count == 1 ){
+						} else if( count == 1 && currentRadius > 3 ){
 							Activity activity = ViewerActivity.this;
 							AlertDialog.Builder builder = new AlertDialog.Builder(activity);
 							builder.setMessage(getString(R.string.room_found) + 
