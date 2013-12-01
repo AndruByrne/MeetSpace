@@ -18,7 +18,7 @@ public class MeetSpace extends Application {
 		Parse.initialize(this, "MGLk8RjoPAXV5Ct2jJynl77xl8XHq4VyTtfWETtf", 
 		        "7CWwbI90dM5Yf8VBagfLEREhD2rvW7ZKwSwONzCr"); 
 
-		// Set your Facebook App Id in strings.xml
+		/// Set your Facebook App Id in strings.xml
 		ParseFacebookUtils.initialize(getString(R.string.fb_app_id));
 
 		MeetSpace.context = getApplicationContext();
