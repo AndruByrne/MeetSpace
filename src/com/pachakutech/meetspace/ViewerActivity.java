@@ -180,24 +180,6 @@ GooglePlayServicesClient.OnConnectionFailedListener {
     //**********Room Checking, Creating, and Adding self******//
 	private void lookForARoom( ) {
 		userLatitude.setText( Double.toString( currentLocation.getLatitude( ) ) );
-
-		userGeoPoint = geoPointFromLocation( ( currentLocation == null ) ? lastLocation : currentLocation );
-		//to be replaced by a function
-		//dialog will need meters to room center, init to true, then false as circle expands
-		boolean roomJustRight = true;
-		if( nearARoom( ) ) {
-			if( roomJustRight ) {
-				//enterRoom();
-			} //else user wants to make new room anyway
-		} else {
-			if( null == null ) {
-				makeNewRoom( );
-			} else {//throw an error wrt lack of network connectivity
-			}
-		}
-	}
-
-	private boolean nearARoom( ) {
 		ParseQuery roomQuery = ParseQuery.getQuery( "Room" );
 		roomQuery.whereWithinKilometers( "location", userGeoPoint, SEARCH_RADIUS[currentRadius] );
 		roomQuery.whereEqualTo( "network", getNetwork( ) );
@@ -208,19 +190,20 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 							makeNewRoom( );
 						} else if( count == 0 && currentRadius < SEARCH_RADIUS.length - 1 && checkedAbove == false ) {
 							currentRadius++;
-							nearARoom( );
+							lookForARoom( );
 						} else if( count == 0 && currentRadius < SEARCH_RADIUS.length - 1 && checkedAbove == true ) {
 							currentRadius++; //inform that several rooms are available, perhaps pick?, then
 							joinRoom( );
 						} else if( count > 1 && currentRadius != 0 ) {
 							checkedAbove = true;
 							currentRadius--;
-							nearARoom( );
+							lookForARoom( );
 						} else if( count == 1 ){
-							AlertDialog.Builder builder = new AlertDialog.Builder(MeetSpace.getContext());
-							builder.setMessage(R.string.room_found + 
+							Activity activity = ViewerActivity.this;
+							AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+							builder.setMessage(getString(R.string.room_found) + 
 							    Double.toString(SEARCH_RADIUS[currentRadius]*1000) + 
-								R.string.too_large_prompt);
+								getString(R.string.too_large_prompt));
 							builder.setPositiveButton("Yes", new DialogInterface.OnClickListener(){
 								public void onClick(DialogInterface dialog, int Id){
 									makeNewRoom();
@@ -241,7 +224,6 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 					}
 				}
 			} );
-		return false;
 	}
 
 	private void makeNewRoom( ) {
@@ -538,6 +520,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		if( !hasSetUpInitialLocation ) {
 			hasSetUpInitialLocation = true;		
 		}
+		userGeoPoint = geoPointFromLocation( ( currentLocation == null ) ? lastLocation : currentLocation );
 		lookForARoom( );
 	}
 
@@ -570,6 +553,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		}
 
 		public void setDialog( Dialog newDialog ) {
+			Log.e(MeetSpace.TAG, "set Error Didalog");
 			dialog = newDialog;
 		}
 
