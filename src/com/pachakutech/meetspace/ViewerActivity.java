@@ -31,6 +31,9 @@ import android.location.Location;
 import com.parse.*;
 import com.google.android.gms.location.*;
 import com.google.android.gms.maps.model.*;
+import android.view.*;
+import android.support.v4.view.*;
+import com.pachakutech.meetspace.ViewerActivity.*;
 
 public class ViewerActivity extends FragmentActivity implements LocationListener,
 GooglePlayServicesClient.ConnectionCallbacks,
@@ -41,7 +44,6 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	private LocationClient locationClient;
 	private Location lastLocation = null;
 	private Location currentLocation = null;
-	private ProfilePictureView userProfilePictureView;
 	private TextView userNameView;
 	private TextView userLocationView;
 	private TextView userGenderView;
@@ -56,15 +58,21 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	private ParseGeoPoint userGeoPoint;
 	private int currentRadius = 3;
 	private boolean checkedAbove;
-	
+	private int NUM_MUGS;
+	private ViewPager pager;
+//	private PagerAdapter pagerAdapter;
+	private ParseObject thisRoom;
+	private ParseUser[] roomPopulation;
+    private ViewerActivity.ScreenSlidePagerAdapter adapter;
+
+
+
 	@Override
 	protected void onCreate( Bundle savedInstanceState ) {
 		super.onCreate( savedInstanceState );
 
 		setContentView( R.layout.userdetails );
 
-		userProfilePictureView = (ProfilePictureView) findViewById( R.id.userProfilePicture );
-		userNameView = (TextView) findViewById( R.id.userName );
 		userLocationView = (TextView) findViewById( R.id.userLocation );
 		userGenderView = (TextView) findViewById( R.id.userGender );
 		userDateOfBirthView = (TextView) findViewById( R.id.userDateOfBirth );
@@ -84,6 +92,10 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		locationRequest.setPriority( LocationRequest.PRIORITY_HIGH_ACCURACY );
 		locationRequest.setFastestInterval( TWELVE_SECONDS / 120 );
 		locationClient = new LocationClient( this, this, this );
+
+		pager = (ViewPager) findViewById( R.id.pager );
+		adapter = new ScreenSlidePagerAdapter( getSupportFragmentManager( ) );
+		pager.setAdapter( adapter );
 
 		// Fetch Facebook user info if the session is active
 		Session session = ParseFacebookUtils.getSession( );
@@ -192,32 +204,32 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 							currentRadius++;
 							lookForARoom( );
 						} else if( count == 0 && currentRadius < SEARCH_RADIUS.length - 1 && checkedAbove == true ) {
-							currentRadius++; //inform that several rooms are available, perhaps pick?, then
-							joinRoom( );
+							//eventually put a query into the upper rooms here, characterize them by preferences, and advertise them to user
+							makeNewRoom( );
 						} else if( count > 1 && currentRadius != 0 ) {
 							checkedAbove = true;
 							currentRadius--;
 							lookForARoom( );
-						} else if( count == 1 && currentRadius > 3 ){
+						} else if( count == 1 && currentRadius > 3 ) {
 							Activity activity = ViewerActivity.this;
-							AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-							builder.setMessage(getString(R.string.room_found) + 
-							    Double.toString(SEARCH_RADIUS[currentRadius]*1000) + 
-								getString(R.string.too_large_prompt));
-							builder.setPositiveButton("Yes", new DialogInterface.OnClickListener(){
-								public void onClick(DialogInterface dialog, int Id){
-									makeNewRoom();
-								}
-							});
-							builder.setNegativeButton("No", new DialogInterface.OnClickListener(){
-								public void onClick(DialogInterface dialog, int Id){
-									joinRoom();
-								}
-							});
-							AlertDialog dialog = builder.create();
+							AlertDialog.Builder builder = new AlertDialog.Builder( activity );
+							builder.setMessage( getString( R.string.room_found ) + 
+											   Double.toString( SEARCH_RADIUS[currentRadius] * 1000 ) + 
+											   getString( R.string.too_large_prompt ) );
+							builder.setPositiveButton( "Yes", new DialogInterface.OnClickListener( ){
+									public void onClick( DialogInterface dialog, int Id ) {
+										makeNewRoom( );
+									}
+								} );
+							builder.setNegativeButton( "No", new DialogInterface.OnClickListener( ){
+									public void onClick( DialogInterface dialog, int Id ) {
+										joinRoom( );
+									}
+								} );
+							AlertDialog dialog = builder.create( );
 							ErrorDialogFragment errorFragment = new ErrorDialogFragment( );
 							errorFragment.setDialog( dialog );
-							errorFragment.show(getSupportFragmentManager(), MeetSpace.TAG);
+							errorFragment.show( getSupportFragmentManager( ), MeetSpace.TAG );
 						} else {
 							joinRoom( );
 						}
@@ -228,18 +240,65 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 
 	private void makeNewRoom( ) {
 		if( ParseUser.getCurrentUser( ) != null ) {
-			ParseObject room = new ParseObject( "Room" );
-			room.put( "network", getNetwork( ) );
-			room.put( "location", userGeoPoint );
-			room.put( "title", getRoomTitle( ) );
-			ParseRelation roomPopulation = room.getRelation( "population" );
+			thisRoom = new ParseObject( "Room" );
+			thisRoom.put( "network", getNetwork( ) );
+			thisRoom.put( "location", userGeoPoint );
+			thisRoom.put( "title", getRoomTitle( ) );
+			ParseRelation roomPopulation = thisRoom.getRelation( "population" );
 			roomPopulation.add( ParseUser.getCurrentUser( ) );
-			room.saveInBackground( );
+			thisRoom.saveInBackground( new SaveCallback( ){
+					public void done( ParseException e ) {
+						if( e == null ) {
+							refreshRoom( );
+						} else {
+							Log.e( MeetSpace.TAG, "Error singing into room" );//should be in UI for retry
+						}
+					}
+				} );
 		}
 	}
 
 	private void joinRoom( ) {
 		Log.i( MeetSpace.TAG, "joining room at radius " + currentRadius );
+		ParseQuery roomQuery = ParseQuery.getQuery( "Room" );
+		roomQuery.whereWithinKilometers( "location", userGeoPoint, SEARCH_RADIUS[currentRadius] );
+		roomQuery.whereEqualTo( "network", getNetwork( ) );
+
+		roomQuery.getFirstInBackground( new GetCallback<ParseObject>( ) {
+				public void done( ParseObject room, ParseException e ) {
+					// comments now contains the comments for posts without images.
+					if( e == null ) {
+						thisRoom = room;
+						ParseRelation roomPopulation = thisRoom.getRelation( "population" );
+						roomPopulation.add( ParseUser.getCurrentUser( ) );
+						thisRoom.saveInBackground( new SaveCallback( ){
+								public void done( ParseException e ) {
+									if( e == null ) {
+										refreshRoom( );
+									} else {
+										Log.e( MeetSpace.TAG, "Error singing into room" );//should be in UI for retry
+									}
+								}
+							} );
+					}
+				}
+			} );
+	}
+	private void refreshRoom( ) {
+		ParseRelation<ParseObject> relation = thisRoom.getRelation( "population" );
+		ParseQuery query = relation.getQuery( );
+//		query.whereNotEqualTo( getNetwork()+"Id", ParseUser.getCurrentUser().get( getNetwork()+"Id" ));
+		query.findInBackground( new FindCallback<ParseObject>( ){
+			    public void done( List<ParseObject> population, ParseException e ) {
+					if( e == null ) {
+						roomPopulation = population.toArray( new ParseUser[population.size( )] );
+						NUM_MUGS = roomPopulation.length;
+						adapter.notifyDataSetChanged( );
+					} else {
+						//something went wrong
+					}
+				}
+			} );
 	}
 
 
@@ -255,10 +314,10 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	//*********Data display***********//
     private void updateViewsWithSelfProfileInfo( ) {
 		ParseUser currentUser = ParseUser.getCurrentUser( );
-		if( currentUser.getString( "facebookId" ) != null ) userProfilePictureView.setProfileId( currentUser.get( "facebookId" ).toString( ) );
-		else userProfilePictureView.setProfileId( null );
-		if( currentUser.get( "name" ) != null ) userNameView.setText( currentUser.getString( "name" ) );
-		else userNameView.setText( "null" );
+//		if( currentUser.getString( "facebookId" ) != null ) userProfilePictureView.setProfileId( currentUser.get( "facebookId" ).toString( ) );
+//		else userProfilePictureView.setProfileId( null );
+//		if( currentUser.get( "name" ) != null ) userNameView.setText( currentUser.getString( "name" ) );
+//		else userNameView.setText( "null" );
 		if( currentUser.get( "friends" ) != null ) userFriendsView.setText( Integer.toString( currentUser.getJSONArray( "friends" ).length( ) ) );
 		else userFriendsView.setText( "" );
 	}
@@ -526,7 +585,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 
 	private void showGoogleErrorDialog( int errorCode ) {
 		// Get the error dialog from Google Play services
-		
+
 		Dialog errorDialog =
 			GooglePlayServicesUtil.getErrorDialog( errorCode, this,
 												  CONNECTION_FAILURE_RESOLUTION_REQUEST );
@@ -541,9 +600,49 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 			errorFragment.setDialog( errorDialog );
 
 			// Show the error dialog in the DialogFragment
-			errorFragment.show(getSupportFragmentManager(), MeetSpace.TAG);
+			errorFragment.show( getSupportFragmentManager( ), MeetSpace.TAG );
 		}
 	}
+
+	@Override
+    public void onBackPressed( ) {
+        if( pager.getCurrentItem( ) == 0 ) {
+            // If the user is currently looking at the first step, allow the system to handle the
+            // Back button. This calls finish() on this activity and pops the back stack.
+            super.onBackPressed( );
+        } else {
+            // Otherwise, select the previous step.
+            pager.setCurrentItem( pager.getCurrentItem( ) - 1 );
+        }
+    }
+
+	//******************Adapters********************//
+	private class ScreenSlidePagerAdapter extends FragmentStatePagerAdapter {
+        public ScreenSlidePagerAdapter( FragmentManager fm ) {
+            super( fm );
+        }
+
+        @Override
+        public Fragment getItem( int position ) {
+            ScreenSlidePageFragment fragment = new ScreenSlidePageFragment( );
+			ProfilePictureView userProfilePictureView = (ProfilePictureView) findViewById( R.id.userProfilePicture );
+    		userNameView = (TextView) findViewById( R.id.userName );
+			String profileIdString = "******Target User fbId " + roomPopulation[position].getString( getNetwork() + "Id" );
+			Log.i( MeetSpace.TAG, profileIdString);
+			String testString = userProfilePictureView.getProfileId();
+			userProfilePictureView.
+			    setProfileId( profileIdString );
+
+			return fragment;
+        }
+
+        @Override
+        public int getCount( ) {
+            return NUM_MUGS;
+        }
+    }
+
+	//******************Fragments********************//
 	public static class ErrorDialogFragment extends DialogFragment {
 		private Dialog dialog;
 
@@ -553,7 +652,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		}
 
 		public void setDialog( Dialog newDialog ) {
-			Log.e(MeetSpace.TAG, "set Error Didalog");
+			Log.e( MeetSpace.TAG, "set Error Didalog" );
 			dialog = newDialog;
 		}
 
@@ -562,4 +661,5 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 			return dialog;
 		}
 	}
+
 }

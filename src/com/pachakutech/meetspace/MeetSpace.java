@@ -8,7 +8,7 @@ import android.content.*;
 
 
 public class MeetSpace extends Application {
-
+//Hotel Utah 415.495.0617
     public static final Boolean APPDEBUG = true;
     public static final String TAG = "MeetSpace";
     private volatile static Context context;
