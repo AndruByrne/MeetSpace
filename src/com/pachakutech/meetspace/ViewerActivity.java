@@ -33,7 +33,8 @@ import com.google.android.gms.location.*;
 import com.google.android.gms.maps.model.*;
 import android.view.*;
 import android.support.v4.view.*;
-import com.pachakutech.meetspace.ViewerActivity.*;
+import com.pachakutech.meetspace.ViewerActivity;
+import com.pachakutech.meetspace.ZoomOutPageTransformer;
 
 public class ViewerActivity extends FragmentActivity implements LocationListener,
 GooglePlayServicesClient.ConnectionCallbacks,
@@ -44,16 +45,11 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	private LocationClient locationClient;
 	private Location lastLocation = null;
 	private Location currentLocation = null;
-	private TextView userNameView;
-	private TextView userLocationView;
-	private TextView userGenderView;
-	private TextView userDateOfBirthView;
-	private TextView userRelationshipView;
 	private TextView userFriendsView;
 	private TextView userLatitude;
 	private Button logoutButton;
 	private static final int CONNECTION_FAILURE_RESOLUTION_REQUEST = 0;
-    private static final double[] SEARCH_RADIUS = {.004, .008, .016, .032, .064, .096, .2, .4, .8, 1.4, 2};
+    private static final double[] SEARCH_RADIUS = {.004, .008, .016, .032, .064, .096, .2, .4, .8, 1.4, 2, 2.8, 3.6, 4.4, 8, 10, 16, 22, 36, 54, 78, 100, 10000};
 	private boolean hasSetUpInitialLocation;
 	private ParseGeoPoint userGeoPoint;
 	private int currentRadius = 3;
@@ -73,13 +69,6 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 
 		setContentView( R.layout.userdetails );
 
-		userLocationView = (TextView) findViewById( R.id.userLocation );
-		userGenderView = (TextView) findViewById( R.id.userGender );
-		userDateOfBirthView = (TextView) findViewById( R.id.userDateOfBirth );
-		userFriendsView = (TextView) findViewById( R.id.userFriends );
-		userRelationshipView = (TextView) findViewById( R.id.userRelationship );
-		userLatitude = (TextView) findViewById( R.id.userLatitude );
-
 		logoutButton = (Button) findViewById( R.id.logoutButton );
 		logoutButton.setOnClickListener( new View.OnClickListener( ) {
 				@Override
@@ -94,6 +83,8 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		locationClient = new LocationClient( this, this, this );
 
 		pager = (ViewPager) findViewById( R.id.pager );
+		pager.setId(0x7F04FAF0);
+	//	pager.setPageTransformer(true, new ZoomOutPageTransformer());
 		adapter = new ScreenSlidePagerAdapter( getSupportFragmentManager( ) );
 		pager.setAdapter( adapter );
 
@@ -135,9 +126,6 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 				@Override
 				public void onCompleted( GraphUser user, Response response ) {
 					if( user != null ) {
-						//JSONObject networkId = new JSONObject( );
-						//networkId.put( "facebookId", user.getId( ) );
-						//networkId.put( "name", user.getName( ) );
 						ParseUser currentUser = ParseUser.getCurrentUser( );
 						currentUser.put( "facebookId", user.getId( ) );
 						currentUser.put( "name", user.getName( ) );
@@ -188,7 +176,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 			} );
 		request.executeAsync( );
 	}
-
+	
     //**********Room Checking, Creating, and Adding self******//
 	private void lookForARoom( ) {
 		userLatitude.setText( Double.toString( currentLocation.getLatitude( ) ) );
@@ -292,6 +280,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 			    public void done( List<ParseObject> population, ParseException e ) {
 					if( e == null ) {
 						roomPopulation = population.toArray( new ParseUser[population.size( )] );
+						
 						NUM_MUGS = roomPopulation.length;
 						adapter.notifyDataSetChanged( );
 					} else {
@@ -314,147 +303,13 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	//*********Data display***********//
     private void updateViewsWithSelfProfileInfo( ) {
 		ParseUser currentUser = ParseUser.getCurrentUser( );
-//		if( currentUser.getString( "facebookId" ) != null ) userProfilePictureView.setProfileId( currentUser.get( "facebookId" ).toString( ) );
-//		else userProfilePictureView.setProfileId( null );
-//		if( currentUser.get( "name" ) != null ) userNameView.setText( currentUser.getString( "name" ) );
-//		else userNameView.setText( "null" );
 		if( currentUser.get( "friends" ) != null ) userFriendsView.setText( Integer.toString( currentUser.getJSONArray( "friends" ).length( ) ) );
 		else userFriendsView.setText( "" );
 	}
 
-//	private void makeMeRequest( ) {
-//	    Request request = Request.newMeRequest( ParseFacebookUtils.getSession( ),
-//			new Request.GraphUserCallback( ) {
-//				@Override
-//				public void onCompleted( GraphUser user, Response response ) {
-//					if( user != null ) {
-//						// Create a JSON object to hold the profile info
-//						JSONObject userProfile = new JSONObject( );
-//						// And one for the friends
-//						JSONObject userFriends = new JSONObject( );
-//						try {
-//							// Populate the profile JSON object
-//							userProfile.put( "facebookId", user.getId( ) );
-//							userProfile.put( "name", user.getName( ) );
-//							if( user.getLocation( ).getProperty( "name" ) != null ) {
-//								userProfile.put( "location", (String) user
-//												.getLocation( ).getProperty( "name" ) );
-//							}
-//							if( user.getProperty( "gender" ) != null ) {
-//								userProfile.put( "gender",
-//												(String) user.getProperty( "gender" ) );
-//							}
-//							if( user.getBirthday( ) != null ) {
-//								userProfile.put( "birthday",
-//												user.getBirthday( ) );
-//							}
-//							if( user.getProperty( "relationship_status" ) != null ) {
-//								userProfile
-//									.put( "relationship_status",
-//										 (String) user
-//										 .getProperty( "relationship_status" ) );
-//							}
-//							if( user.getProperty( "friends" ) != null ) {
-//								userFriends.put( "friends",
-//												(Object[]) user.getProperty( "friends" ) );
-//							}
-//							// Save the user profile info in a user property
-//							ParseUser currentUser = ParseUser
-//								.getCurrentUser( );
-//							currentUser.put( "profile", userProfile );
-//							currentUser.saveInBackground( );
-//
-//							//make friendsRequest
-//							makeFriendsRequest( );
-//
-//
-//							// Show the user info
-////								updateViewsWithProfileInfo();
-//						} catch(JSONException e) {
-//							Log.d( TAG,
-//								  "Error parsing returned user data." );
-//						}
-//
-//					} else if( response.getError( ) != null ) {
-//						if( ( response.getError( ).getCategory( ) == FacebookRequestError.Category.AUTHENTICATION_RETRY )
-//                           || ( response.getError( ).getCategory( ) == FacebookRequestError.Category.AUTHENTICATION_REOPEN_SESSION ) ) {
-//							Log.d( TAG,
-//								  "The facebook session was invalidated." );
-//							onLogoutButtonClicked( );
-//						} else {
-//							Log.d( TAG,
-//								  "Some other error: "
-//								  + response.getError( )
-//								  .getErrorMessage( ) );
-//						}
-//					}
-//				}
-//			} );
-//		request.executeAsync( );
-//	}
-
-//*****************Not long for this world********************//	
-//	private void updateViewsWithProfileInfo( ) {
-//		ParseUser currentUser = ParseUser.getCurrentUser( );
-//		if( currentUser.get( "profile" ) != null ) {
-//			JSONObject userProfile = currentUser.getJSONObject( "profile" );
-//			try {
-//				if( userProfile.getString( "facebookId" ) != null ) {
-//					String facebookId = userProfile.get( "facebookId" )
-//						.toString( );
-//					userProfilePictureView.setProfileId( facebookId );
-//				} else {
-//					// Show the default, blank user profile picture
-//					userProfilePictureView.setProfileId( null );
-//				}
-//				if( userProfile.getString( "name" ) != null ) {
-//					userNameView.setText( userProfile.getString( "name" ) );
-//				} else {
-//					userNameView.setText( "" );
-//				}
-//				if( userProfile.getString( "location" ) != null ) {
-//					userLocationView.setText( userProfile.getString( "location" ) );
-//				} else {
-//					userLocationView.setText( "" );
-//				}
-//				if( userProfile.getString( "gender" ) != null ) {
-//					userGenderView.setText( userProfile.getString( "gender" ) );
-//				} else {
-//					userGenderView.setText( "" );
-//				}
-//				if( userProfile.getString( "birthday" ) != null ) {
-//					userDateOfBirthView.setText( userProfile
-//												.getString( "birthday" ) );
-//				} else {
-//					userDateOfBirthView.setText( "" );
-//				}
-//				if( currentUser.get( "friends" ) != null ) {
-//					userFriendsView.setText( Integer.toString(
-//												currentUser.getJSONArray( "friends" ).length( ) ) );
-//				} else {
-//					userFriendsView.setText( "no friends" );
-//				}
-//				if( userProfile.getString( "relationship_status" ) != null ) {
-//					userRelationshipView.setText( userProfile
-//												 .getString( "relationship_status" ) );
-//				} else {
-//					userRelationshipView.setText( "" );
-//				}
-//			} catch(JSONException e) {
-//				Log.d( TAG,
-//					  "Error parsing saved user data." );
-//			}
-//
-//		}
-//	}
-
-
 	//**********Logout********//
 	private void onLogoutButtonClicked( ) {
-		// Log the user out
 		ParseUser.logOut( );
-
-		// Go to the login view
 		startLoginActivity( );
 	}
 
@@ -465,35 +320,22 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		startActivity( intent );
 	}
 
-
-
-
-
-
-
-	//***********Location Functions from here to end*******//
-	private ParseGeoPoint geoPointFromLocation( Location loc ) {
-		return new ParseGeoPoint( loc.getLatitude( ), loc.getLongitude( ) );
-	}
+	
+	
+	
+	//***********Location Functions ********************//
+	private ParseGeoPoint geoPointFromLocation( Location loc ) {return new ParseGeoPoint( loc.getLatitude( ), loc.getLongitude( ) );}
 
 	//4 Required implementions
 	public void onProviderDisabled( String string ) {}
 
-	public void onStatusChanged( String string, int i, Bundle bundle ) {
-		// TODO: Implement this method
-	}
+	public void onStatusChanged( String string, int i, Bundle bundle ) {}
 
-	public void onProviderEnabled( String string ) {
-		// TODO: Implement this method
-	}
+	public void onProviderEnabled( String string ) {}
 
-	private void startPeriodicUpdates( ) {
-		locationClient.requestLocationUpdates( locationRequest, this );
-	}
+	private void startPeriodicUpdates( ) {locationClient.requestLocationUpdates( locationRequest, this );}
 
-	private void stopPeriodicUpdates( ) {
-		locationClient.removeLocationUpdates( this );
-	}
+	private void stopPeriodicUpdates( ) {locationClient.removeLocationUpdates( this );}
 
 	private Location getLocation( ) {
 		if( servicesConnected( ) ) {
@@ -616,6 +458,8 @@ GooglePlayServicesClient.OnConnectionFailedListener {
         }
     }
 
+	
+	
 	//******************Adapters********************//
 	private class ScreenSlidePagerAdapter extends FragmentStatePagerAdapter {
         public ScreenSlidePagerAdapter( FragmentManager fm ) {
@@ -625,14 +469,9 @@ GooglePlayServicesClient.OnConnectionFailedListener {
         @Override
         public Fragment getItem( int position ) {
             ScreenSlidePageFragment fragment = new ScreenSlidePageFragment( );
-			ProfilePictureView userProfilePictureView = (ProfilePictureView) findViewById( R.id.userProfilePicture );
-    		userNameView = (TextView) findViewById( R.id.userName );
-			String profileIdString = "******Target User fbId " + roomPopulation[position].getString( getNetwork() + "Id" );
-			Log.i( MeetSpace.TAG, profileIdString);
-			String testString = userProfilePictureView.getProfileId();
-			userProfilePictureView.
-			    setProfileId( profileIdString );
-
+			String profileIdString = roomPopulation[position].getString( getNetwork() + "Id" );
+			fragment.setName("TestName");
+			fragment.setId(profileIdString);
 			return fragment;
         }
 
@@ -661,5 +500,4 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 			return dialog;
 		}
 	}
-
 }
