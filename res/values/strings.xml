@@ -3,7 +3,9 @@
 
     <string name="app_name">MeetSpace</string>
     <string name="fb_app_id">163314020546526</string>
-    <string name="action_settings">Settings</string>
+	<string name="tw_app_id">aCa58KwS1urYpTWwh7W6w</string>
+    <string name="tw_app_sec">AwuH9TM41LJmgVw63lD7vMuwHvCzypClEYMlzy8w</string>    
+	<string name="action_settings">Settings</string>
     <string name="login">Log In</string>
     <string name="logout">Log Out</string>
     <string name="login_intro">Currently supporting Facebook friend requests; log in with the button below!</string>

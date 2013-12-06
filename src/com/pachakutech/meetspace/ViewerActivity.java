@@ -35,6 +35,11 @@ import android.view.*;
 import android.support.v4.view.*;
 import com.pachakutech.meetspace.ViewerActivity;
 import com.pachakutech.meetspace.ZoomOutPageTransformer;
+import org.apache.http.client.*;
+import org.apache.http.impl.client.*;
+import org.apache.http.client.methods.*;
+import java.io.*;
+import org.apache.http.HttpResponse;
 
 public class ViewerActivity extends FragmentActivity implements LocationListener,
 GooglePlayServicesClient.ConnectionCallbacks,
@@ -45,8 +50,6 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	private LocationClient locationClient;
 	private Location lastLocation = null;
 	private Location currentLocation = null;
-//	private TextView userFriendsView;
-//	private TextView userLatitude;
 	private Button logoutButton;
 	private static final int CONNECTION_FAILURE_RESOLUTION_REQUEST = 0;
     private static final double[] SEARCH_RADIUS = {.004, .008, .016, .032, .064, .096, .2, .4, .8, 1.4, 2, 2.8, 3.6, 4.4, 8, 10, 16, 22, 36, 54, 78, 100, 10000};
@@ -56,10 +59,10 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	private boolean checkedAbove;
 	private int NUM_MUGS;
 	private ViewPager pager;
-//	private PagerAdapter pagerAdapter;
 	private ParseObject thisRoom;
 	private ParseUser[] roomPopulation;
     private ViewerActivity.ScreenSlidePagerAdapter adapter;
+	private String network;
 
 
 
@@ -75,6 +78,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 				public void onClick( View v ) {onLogoutButtonClicked( );}
 			} );
 
+        setNetwork(getIntent().getExtras().getInt("network"));
 		// Create a new global location parameters object
 		locationRequest = LocationRequest.create( );
 		locationRequest.setInterval( TWELVE_SECONDS / 12 );
@@ -92,7 +96,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		Session session = ParseFacebookUtils.getSession( );
 
 		if( session != null && session.isOpened( ) ) {
-			//eventually put case statement here
+            //eventually put case statement here
 			getFbId( );
 //			makeFriendsRequest( );
 		} else Log.e( MeetSpace.TAG, "no request made" );
@@ -140,6 +144,16 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 				}
 			} );
 		request.executeAsync( );
+	}
+
+	private void getTwId( ){
+		HttpClient client = new DefaultHttpClient();
+		HttpGet verifyGet = new HttpGet(
+			"https://api.twitter.com/1/account/verify_credentials.json");
+		ParseTwitterUtils.getTwitter().signRequest(verifyGet);
+		try {
+			HttpResponse response = client.execute( verifyGet );
+		} catch(IOException e) {Log.e(MeetSpace.TAG, "Twitter error: "+e.toString());}
 	}
 
 //	private void makeFriendsRequest( ) {
@@ -293,8 +307,16 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 
 
     //************MeetSpace Helper functions*************//
+	private void setNetwork(int network){
+		if( network == MeetSpace.FACEBOOK ){
+			this.network = "facebook";
+		}
+		else if( network == MeetSpace.TWITTER ){
+			this.network = "twitter";
+		}
+	}
 	private String getNetwork( ) {
-		return "facebook";
+		return network;
 	}				
 	private String getRoomTitle( ) {
 		return "Public Room";
@@ -314,7 +336,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	}
 
 	private void startLoginActivity( ) {
-		Intent intent = new Intent( this, LoginActivity.class );
+		Intent intent = new Intent( this, HomeActivity.class );
 		intent.addFlags( Intent.FLAG_ACTIVITY_CLEAR_TOP );
 		intent.addFlags( Intent.FLAG_ACTIVITY_NEW_TASK );
 		startActivity( intent );
