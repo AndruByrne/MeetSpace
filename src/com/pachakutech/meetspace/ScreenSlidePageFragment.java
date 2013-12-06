@@ -20,23 +20,21 @@ public class ScreenSlidePageFragment extends Fragment {
 	private String Id;
 	private String Name;
 	
-	public void setName( String name ){
-		Name = name;
-	}
-
 	public void setId( String id ) {
 		Id = id;
 	}
-	
+	public void setName( String name ){
+		Name = name;
+	}
 	
 	@Override
 	public View onCreateView( LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState ) {
 		ViewGroup view = (ViewGroup) inflater.inflate( R.layout.mugs, container, false );
 		ProfilePictureView profilePictureView = (ProfilePictureView) view.findViewById( R.id.profilePicture );
 		TextView profileNameView = (TextView) view.findViewById( R.id.profileName );
-		profileNameView.setText( Name );
 		profilePictureView.setProfileId( Id );
-		view.setOnClickListener( new OnClickListener( ){
+		profileNameView.setText( Name );
+		profilePictureView.setOnClickListener( new OnClickListener( ){
 				public void onClick( View v ) {
 					try {
 						//try to open page in facebook native app.
@@ -45,13 +43,13 @@ public class ScreenSlidePageFragment extends Fragment {
 						startActivity( intent );   
 					} catch(ActivityNotFoundException ex) {
 						//facebook native app isn't available, use browser.
-						String uriWeb = "http://touch.facebook.com/pages/x/" + Id;  //Normal URL  
+						String uriWeb = "http://facebook.com/profile.php?id=" + Id;  //Normal URL  
 						Intent i = new Intent( Intent.ACTION_VIEW, Uri.parse( uriWeb ) );    
 						startActivity( i ); 
 					}
 				}
 			} );
-		view.setOnLongClickListener( new OnLongClickListener( ) { 
+		profilePictureView.setOnLongClickListener( new OnLongClickListener( ) { 
 				@Override
 				public boolean onLongClick( View v ) {
 					sendRequestDialog( );
@@ -61,45 +59,26 @@ public class ScreenSlidePageFragment extends Fragment {
 		return view;		
 	}
 	private void sendRequestDialog( ) {
+//		String requestUrl = "https://www.facebook.com/dialog/friends/?id="+
+//		     Id+"&app_id="+getString(R.string.fb_app_id)+"&redirect_uri=http://www.facebook.com";
+//		WebDialog requestDialog = new WebDialog(this.getActivity(), requestUrl);
+//		requestDialog.show();
+//		CompleteListener listener = new CompleteListener();
+//		FacebookFriendsPatch friendsPatch = new FacebookFriendsPatch(getString(R.string.fb_app_id));
 		Bundle params = new Bundle();
-	    params.putString("message", "Met on MeetSpace!");
+		params.putString( "id", Id );
+//        friendsPatch.dialog(this.getActivity(), "friends/", params, listener);
 		WebDialog requestsDialog = (
 			new WebDialog.Builder( this.getActivity(),
-									Session.getActiveSession( ),
-		    "friends/?id="+Id+"&app_id="+getString(R.string.fb_app_id), params)
-            .setOnCompleteListener( new completeListener( ) )
+								  getString(R.string.fb_app_id),
+		    					  "friends/", params)
+            .setOnCompleteListener( new CompleteListener( ) )
             .build( ));
 		requestsDialog.show( );
+		
 	}
 
-	class completeListener implements WebDialog.OnCompleteListener {
-		@Override
-		public void onComplete( Bundle values,
-							   FacebookException error ) {
-			if( error != null ) {
-				if( error instanceof FacebookOperationCanceledException ) {
-					Toast.makeText( getActivity( ).getApplicationContext( ), 
-								   "Request cancelled", 
-								   Toast.LENGTH_SHORT ).show( );
-				} else {
-					Toast.makeText( getActivity( ).getApplicationContext( ), 
-								   "Network Error", 
-								   Toast.LENGTH_SHORT ).show( );
-				}
-			} else {
-				final String requestId = values.getString( "request" );
-				if( requestId != null ) {
-					Toast.makeText( getActivity( ).getApplicationContext( ), 
-								   "Request sent",  
-								   Toast.LENGTH_SHORT ).show( );
-				} else {
-					Toast.makeText( getActivity( ).getApplicationContext( ), 
-								   "Request cancelled", 
-								   Toast.LENGTH_SHORT ).show( );
-				}
-			}   
-		}
-	}
+	
 }
 	
 

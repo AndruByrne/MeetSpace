@@ -45,8 +45,8 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	private LocationClient locationClient;
 	private Location lastLocation = null;
 	private Location currentLocation = null;
-	private TextView userFriendsView;
-	private TextView userLatitude;
+//	private TextView userFriendsView;
+//	private TextView userLatitude;
 	private Button logoutButton;
 	private static final int CONNECTION_FAILURE_RESOLUTION_REQUEST = 0;
     private static final double[] SEARCH_RADIUS = {.004, .008, .016, .032, .064, .096, .2, .4, .8, 1.4, 2, 2.8, 3.6, 4.4, 8, 10, 16, 22, 36, 54, 78, 100, 10000};
@@ -94,7 +94,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		if( session != null && session.isOpened( ) ) {
 			//eventually put case statement here
 			getFbId( );
-			makeFriendsRequest( );
+//			makeFriendsRequest( );
 		} else Log.e( MeetSpace.TAG, "no request made" );
 	}
 
@@ -142,44 +142,44 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		request.executeAsync( );
 	}
 
-	private void makeFriendsRequest( ) {
-		Request request = Request.newMyFriendsRequest( ParseFacebookUtils.getSession( ),
-			new Request.GraphUserListCallback( ) {
-				@Override
-				public void onCompleted( List<GraphUser> users, Response response ) {
-					if( users != null ) {
-						List<String> friends = new ArrayList<String>( );
-						for( GraphUser user : users ) {
-							friends.add( user.getId( ) );
-						}
-						ParseUser currentUser = ParseUser.getCurrentUser( );
-						currentUser.put( "friends", friends );
-						currentUser.saveInBackground( );
-						Log.e( MeetSpace.TAG, "Uploaded friends list with " + friends.size( ) + " entries" );
-
-						// Show the user info
-						updateViewsWithSelfProfileInfo( );
-					} else if( response.getError( ) != null ) {
-						if( ( response.getError( ).getCategory( ) == FacebookRequestError.Category.AUTHENTICATION_RETRY )
-                           || ( response.getError( ).getCategory( ) == FacebookRequestError.Category.AUTHENTICATION_REOPEN_SESSION ) ) {
-							Log.d( MeetSpace.TAG,
-								  "The facebook session was invalidated." );
-							onLogoutButtonClicked( );
-						} else {
-							Log.d( MeetSpace.TAG,
-								  "Some other error: "
-								  + response.getError( )
-								  .getErrorMessage( ) );
-						}
-					}
-				}
-			} );
-		request.executeAsync( );
-	}
-	
+//	private void makeFriendsRequest( ) {
+//		Request request = Request.newMyFriendsRequest( ParseFacebookUtils.getSession( ),
+//			new Request.GraphUserListCallback( ) {
+//				@Override
+//				public void onCompleted( List<GraphUser> users, Response response ) {
+//					if( users != null ) {
+//						List<String> friends = new ArrayList<String>( );
+//						for( GraphUser user : users ) {
+//							friends.add( user.getId( ) );
+//						}
+//						ParseUser currentUser = ParseUser.getCurrentUser( );
+//						currentUser.put( "friends", friends );
+//						currentUser.saveInBackground( );
+//						Log.e( MeetSpace.TAG, "Uploaded friends list with " + friends.size( ) + " entries" );
+//
+//						// Show the user info
+//						updateViewsWithSelfProfileInfo( );
+//					} else if( response.getError( ) != null ) {
+//						if( ( response.getError( ).getCategory( ) == FacebookRequestError.Category.AUTHENTICATION_RETRY )
+//                           || ( response.getError( ).getCategory( ) == FacebookRequestError.Category.AUTHENTICATION_REOPEN_SESSION ) ) {
+//							Log.d( MeetSpace.TAG,
+//								  "The facebook session was invalidated." );
+//							onLogoutButtonClicked( );
+//						} else {
+//							Log.d( MeetSpace.TAG,
+//								  "Some other error: "
+//								  + response.getError( )
+//								  .getErrorMessage( ) );
+//						}
+//					}
+//				}
+//			} );
+//		request.executeAsync( );
+//	}
+//	
     //**********Room Checking, Creating, and Adding self******//
 	private void lookForARoom( ) {
-		userLatitude.setText( Double.toString( currentLocation.getLatitude( ) ) );
+//		userLatitude.setText( Double.toString( currentLocation.getLatitude( ) ) );
 		ParseQuery roomQuery = ParseQuery.getQuery( "Room" );
 		roomQuery.whereWithinKilometers( "location", userGeoPoint, SEARCH_RADIUS[currentRadius] );
 		roomQuery.whereEqualTo( "network", getNetwork( ) );
@@ -302,9 +302,9 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 
 	//*********Data display***********//
     private void updateViewsWithSelfProfileInfo( ) {
-		ParseUser currentUser = ParseUser.getCurrentUser( );
-		if( currentUser.get( "friends" ) != null ) userFriendsView.setText( Integer.toString( currentUser.getJSONArray( "friends" ).length( ) ) );
-		else userFriendsView.setText( "" );
+//		ParseUser currentUser = ParseUser.getCurrentUser( );
+//		if( currentUser.get( "friends" ) != null ) userFriendsView.setText( Integer.toString( currentUser.getJSONArray( "friends" ).length( ) ) );
+//		else userFriendsView.setText( "" );
 	}
 
 	//**********Logout********//
@@ -470,8 +470,9 @@ GooglePlayServicesClient.OnConnectionFailedListener {
         public Fragment getItem( int position ) {
             ScreenSlidePageFragment fragment = new ScreenSlidePageFragment( );
 			String profileIdString = roomPopulation[position].getString( getNetwork() + "Id" );
-			fragment.setName("TestName");
+			String profileName = roomPopulation[position].getString( "name" );
 			fragment.setId(profileIdString);
+			fragment.setName(profileName);
 			return fragment;
         }
 
