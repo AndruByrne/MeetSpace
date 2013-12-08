@@ -44,6 +44,7 @@ import android.os.*;
 import java.nio.*;
 import org.apache.http.HttpEntity;
 import org.apache.http.util.*;
+import android.util.*;
 
 public class ViewerActivity extends FragmentActivity implements LocationListener,
 GooglePlayServicesClient.ConnectionCallbacks,
@@ -104,7 +105,6 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 
 			if( session != null && session.isOpened( ) ) {
 				getFbId( );
-//			if( getNetwork( ) == getString( R.string.twitter ) ) getTwId( );
 //			makeFriendsRequest( );
 			} else Log.e( MeetSpace.TAG, "no request made" );
 		} else if( network == MeetSpace.TWITTER ){
@@ -161,67 +161,37 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		request.executeAsync( );
 	}
 
-	private class GetTwitterId extends AsyncTask<Void, Void, String> {
+	private class GetTwitterId extends AsyncTask<Void, Void, Integer> {
 
 		@Override
-		protected String doInBackground( Void[] v ) {
+		protected Integer doInBackground( Void[] v ) {
 			HttpClient client = new DefaultHttpClient( );
-			HttpResponse response = null;
+			Integer response = null;
 			HttpGet verifyGet = new HttpGet(
-				"https://api.twitter.com/1/account/verify_credentials.json" );
+				"https://api.twitter.com/1.1/account/verify_credentials.json?include_user_entities=false&include_entities=false&skip_status=true" );
 			ParseTwitterUtils.getTwitter( ).signRequest( verifyGet );
 			try {
-				response = client.execute( verifyGet );
-				Log.i( MeetSpace.TAG, "response from twitter: " + response.toString( ) );
+				JsonReader reader = new JsonReader(new InputStreamReader( client.execute( verifyGet ).getEntity( ).getContent( ) ) ) ;
+				reader.beginObject( );
+					String name = reader.nextName( );
+					if( name.equals( "id" ) ){
+						response = reader.nextInt( );
+						Log.i(MeetSpace.TAG, "twitter id: " + response);
+				    } else Log.i( MeetSpace.TAG, "bad json from twitter" );
+				Log.i( MeetSpace.TAG, "response from twitter: " + EntityUtils.toString( client.execute( verifyGet ).getEntity( ) ) );
+//				Log.i( MeetSpace.TAG, "length of response from twitter: " + response.getEntity().getContent().toString());
 			} catch(IOException e) {
 				//insert onLogoutButtonClicked( );
 				Log.e( MeetSpace.TAG, "Twitter error: " + e.toString( ) );
 			}
-			
-			HttpEntity entity = response.getEntity();
-			return EntityUtils.getContentCharSet(entity);
+			return response;
 		}
         @Override
-        protected void onExecute(String response){
-			Log.i(MeetSpace.TAG, "twitter response: " + response);
+        protected void onExecute(Integer response){
+			Log.i(MeetSpace.TAG, "twitter id: " + response);
 		}		
 	}
 
-//	private void makeFriendsRequest( ) {
-//		Request request = Request.newMyFriendsRequest( ParseFacebookUtils.getSession( ),
-//			new Request.GraphUserListCallback( ) {
-//				@Override
-//				public void onCompleted( List<GraphUser> users, Response response ) {
-//					if( users != null ) {
-//						List<String> friends = new ArrayList<String>( );
-//						for( GraphUser user : users ) {
-//							friends.add( user.getId( ) );
-//						}
-//						ParseUser currentUser = ParseUser.getCurrentUser( );
-//						currentUser.put( "friends", friends );
-//						currentUser.saveInBackground( );
-//						Log.e( MeetSpace.TAG, "Uploaded friends list with " + friends.size( ) + " entries" );
-//
-//						// Show the user info
-//						updateViewsWithSelfProfileInfo( );
-//					} else if( response.getError( ) != null ) {
-//						if( ( response.getError( ).getCategory( ) == FacebookRequestError.Category.AUTHENTICATION_RETRY )
-//                           || ( response.getError( ).getCategory( ) == FacebookRequestError.Category.AUTHENTICATION_REOPEN_SESSION ) ) {
-//							Log.d( MeetSpace.TAG,
-//								  "The facebook session was invalidated." );
-//							onLogoutButtonClicked( );
-//						} else {
-//							Log.d( MeetSpace.TAG,
-//								  "Some other error: "
-//								  + response.getError( )
-//								  .getErrorMessage( ) );
-//						}
-//					}
-//				}
-//			} );
-//		request.executeAsync( );
-//	}
-//	
     //**********Room Checking, Creating, and Adding self******//
 	private void lookForARoom( ) {
 //		userLatitude.setText( Double.toString( currentLocation.getLatitude( ) ) );
@@ -556,7 +526,6 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		}
 
 		public void setDialog( Dialog newDialog ) {
-			Log.e( MeetSpace.TAG, "set Error Didalog" );
 			dialog = newDialog;
 		}
 
@@ -565,4 +534,40 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 			return dialog;
 		}
 	}
+//	private void makeFriendsRequest( ) {
+//		Request request = Request.newMyFriendsRequest( ParseFacebookUtils.getSession( ),
+//			new Request.GraphUserListCallback( ) {
+//				@Override
+//				public void onCompleted( List<GraphUser> users, Response response ) {
+//					if( users != null ) {
+//						List<String> friends = new ArrayList<String>( );
+//						for( GraphUser user : users ) {
+//							friends.add( user.getId( ) );
+//						}
+//						ParseUser currentUser = ParseUser.getCurrentUser( );
+//						currentUser.put( "friends", friends );
+//						currentUser.saveInBackground( );
+//						Log.e( MeetSpace.TAG, "Uploaded friends list with " + friends.size( ) + " entries" );
+//
+//						// Show the user info
+//						updateViewsWithSelfProfileInfo( );
+//					} else if( response.getError( ) != null ) {
+//						if( ( response.getError( ).getCategory( ) == FacebookRequestError.Category.AUTHENTICATION_RETRY )
+//                           || ( response.getError( ).getCategory( ) == FacebookRequestError.Category.AUTHENTICATION_REOPEN_SESSION ) ) {
+//							Log.d( MeetSpace.TAG,
+//								  "The facebook session was invalidated." );
+//							onLogoutButtonClicked( );
+//						} else {
+//							Log.d( MeetSpace.TAG,
+//								  "Some other error: "
+//								  + response.getError( )
+//								  .getErrorMessage( ) );
+//						}
+//					}
+//				}
+//			} );
+//		request.executeAsync( );
+//	}
+//	
+	
 }
