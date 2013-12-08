@@ -14,6 +14,8 @@ import android.net.*;
 import com.facebook.widget.*;
 import com.facebook.*;
 import android.widget.*;
+import android.webkit.*;
+import android.app.AlertDialog;
 
 public class ScreenSlidePageFragment extends Fragment {
 
@@ -36,6 +38,12 @@ public class ScreenSlidePageFragment extends Fragment {
 		profileNameView.setText( Name );
 		profilePictureView.setOnClickListener( new OnClickListener( ){
 				public void onClick( View v ) {
+					sendRequestDialog( );	
+				}
+		} );
+		profilePictureView.setOnLongClickListener( new OnLongClickListener( ) { 
+				@Override
+				public boolean onLongClick( View v ) {
 					try {
 						//try to open page in facebook native app.
 						String uri = "fb://page/" + Id;    //Cutsom URL
@@ -47,38 +55,34 @@ public class ScreenSlidePageFragment extends Fragment {
 						Intent i = new Intent( Intent.ACTION_VIEW, Uri.parse( uriWeb ) );    
 						startActivity( i ); 
 					}
-				}
-			} );
-		profilePictureView.setOnLongClickListener( new OnLongClickListener( ) { 
-				@Override
-				public boolean onLongClick( View v ) {
-					sendRequestDialog( );
 					return true;
 				}
-			} );
+		} );
 		return view;		
 	}
 	private void sendRequestDialog( ) {
-//		String requestUrl = "https://www.facebook.com/dialog/friends/?id="+
-//		     Id+"&app_id="+getString(R.string.fb_app_id)+"&redirect_uri=http://www.facebook.com";
-//		WebDialog requestDialog = new WebDialog(this.getActivity(), requestUrl);
-//		requestDialog.show();
-//		CompleteListener listener = new CompleteListener();
-//		FacebookFriendsPatch friendsPatch = new FacebookFriendsPatch(getString(R.string.fb_app_id));
-		Bundle params = new Bundle();
-		params.putString( "id", Id );
-//        friendsPatch.dialog(this.getActivity(), "friends/", params, listener);
-		WebDialog requestsDialog = (
-			new WebDialog.Builder( this.getActivity(),
-								  getString(R.string.fb_app_id),
-		    					  "friends/", params)
-            .setOnCompleteListener( new CompleteListener( ) )
-            .build( ));
-		requestsDialog.show( );
-		
-	}
+		String requestUri = "https://www.facebook.com/dialog/friends/?id="+
+		     Id+"&app_id="+getString(R.string.fb_app_id)+
+			 "&redirect_uri=http://www.facebook.com";
+		WebView webView = new WebView(this.getActivity());
+		webView.getSettings().setUserAgentString(getString(R.string.user_agent_string));
+		webView.setWebViewClient(new WebViewClient(){
+			public boolean shouldOverrideUrlLoading(WebView view, String url){
+				return false;
+			}
+		});
+		webView.loadUrl(requestUri);
+		AlertDialog.Builder dialog = new AlertDialog.Builder(this.getActivity());
+		dialog.setView(webView);
+		dialog.setPositiveButton("Done", new DialogInterface.OnClickListener() {
 
-	
+				public void onClick(DialogInterface dialog, int which) {
+
+					dialog.dismiss();
+				}
+		});
+		dialog.show();
+	}
 }
 	
 

@@ -7,17 +7,20 @@
 	android:orientation="vertical">
 	<com.facebook.widget.ProfilePictureView
 		android:id="@+id/profilePicture"
-		android:layout_height="fill_parent"
-		android:layout_width="fill_parent"
-		android:layout_gravity="center"
-		android:gravity="center_horizontal"
+		android:layout_height="0dp"
+		android:layout_width="match_parent"
+		android:layout_gravity="center_horizontal|center_vertical"
+		android:layout_weight="6"
 	/>
+	
 	<TextView
 		android:id="@+id/profileName"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
 		android:layout_marginLeft="10dp"
 		android:layout_gravity="center"
+		android:layout_weight="1"
 		android:textColor="#333"
 		android:textSize="18sp" />
+	
 </LinearLayout>

@@ -40,29 +40,35 @@ import org.apache.http.impl.client.*;
 import org.apache.http.client.methods.*;
 import java.io.*;
 import org.apache.http.HttpResponse;
+import android.os.*;
+import java.nio.*;
+import org.apache.http.HttpEntity;
+import org.apache.http.util.*;
 
 public class ViewerActivity extends FragmentActivity implements LocationListener,
 GooglePlayServicesClient.ConnectionCallbacks,
 GooglePlayServicesClient.OnConnectionFailedListener {
 
-	private static final int TWELVE_SECONDS = 12000;
 	private LocationRequest locationRequest;
 	private LocationClient locationClient;
 	private Location lastLocation = null;
 	private Location currentLocation = null;
 	private Button logoutButton;
-	private static final int CONNECTION_FAILURE_RESOLUTION_REQUEST = 0;
-    private static final double[] SEARCH_RADIUS = {.004, .008, .016, .032, .064, .096, .2, .4, .8, 1.4, 2, 2.8, 3.6, 4.4, 8, 10, 16, 22, 36, 54, 78, 100, 10000};
 	private boolean hasSetUpInitialLocation;
 	private ParseGeoPoint userGeoPoint;
 	private int currentRadius = 3;
 	private boolean checkedAbove;
 	private int NUM_MUGS;
 	private ViewPager pager;
-	private ParseObject thisRoom;
+	private ParseObject thisRoom = null;
 	private ParseUser[] roomPopulation;
     private ViewerActivity.ScreenSlidePagerAdapter adapter;
-	private String network;
+	private String network_name;
+
+	private int network;
+
+	private boolean loggingOut = false
+	;
 
 
 
@@ -78,28 +84,32 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 				public void onClick( View v ) {onLogoutButtonClicked( );}
 			} );
 
-        setNetwork(getIntent().getExtras().getInt("network"));
+        setNetwork( getIntent( ).getExtras( ).getInt( "network" ) );
 		// Create a new global location parameters object
 		locationRequest = LocationRequest.create( );
-		locationRequest.setInterval( TWELVE_SECONDS / 12 );
+		locationRequest.setInterval( MeetSpace.TWELVE_SECONDS / 12 );
 		locationRequest.setPriority( LocationRequest.PRIORITY_HIGH_ACCURACY );
-		locationRequest.setFastestInterval( TWELVE_SECONDS / 120 );
+		locationRequest.setFastestInterval( MeetSpace.TWELVE_SECONDS / 120 );
 		locationClient = new LocationClient( this, this, this );
 
 		pager = (ViewPager) findViewById( R.id.pager );
-		pager.setId(0x7F04FAF0);
-	//	pager.setPageTransformer(true, new ZoomOutPageTransformer());
+		pager.setId( 0x7F04FAF0 );
+		//	pager.setPageTransformer(true, new ZoomOutPageTransformer());
 		adapter = new ScreenSlidePagerAdapter( getSupportFragmentManager( ) );
 		pager.setAdapter( adapter );
+		if( network == MeetSpace.FACEBOOK ) {
+			
+			// Fetch Facebook user info if the session is active
+			Session session = ParseFacebookUtils.getSession( );
 
-		// Fetch Facebook user info if the session is active
-		Session session = ParseFacebookUtils.getSession( );
-
-		if( session != null && session.isOpened( ) ) {
-            //eventually put case statement here
-			getFbId( );
+			if( session != null && session.isOpened( ) ) {
+				getFbId( );
+//			if( getNetwork( ) == getString( R.string.twitter ) ) getTwId( );
 //			makeFriendsRequest( );
-		} else Log.e( MeetSpace.TAG, "no request made" );
+			} else Log.e( MeetSpace.TAG, "no request made" );
+		} else if( network == MeetSpace.TWITTER ){
+			new GetTwitterId().execute();
+		}
 	}
 
 	@Override
@@ -119,6 +129,11 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 
 	@Override
 	public void onStop( ) {
+		if( thisRoom != null &&loggingOut == false){
+			ParseRelation population = thisRoom.getRelation( "population" );
+			population.remove(ParseUser.getCurrentUser());
+			thisRoom.saveInBackground();
+		}
 		if( locationClient.isConnected( ) ) stopPeriodicUpdates( );
 		locationClient.disconnect( );
 		super.onStop( );
@@ -146,14 +161,30 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		request.executeAsync( );
 	}
 
-	private void getTwId( ){
-		HttpClient client = new DefaultHttpClient();
-		HttpGet verifyGet = new HttpGet(
-			"https://api.twitter.com/1/account/verify_credentials.json");
-		ParseTwitterUtils.getTwitter().signRequest(verifyGet);
-		try {
-			HttpResponse response = client.execute( verifyGet );
-		} catch(IOException e) {Log.e(MeetSpace.TAG, "Twitter error: "+e.toString());}
+	private class GetTwitterId extends AsyncTask<Void, Void, String> {
+
+		@Override
+		protected String doInBackground( Void[] v ) {
+			HttpClient client = new DefaultHttpClient( );
+			HttpResponse response = null;
+			HttpGet verifyGet = new HttpGet(
+				"https://api.twitter.com/1/account/verify_credentials.json" );
+			ParseTwitterUtils.getTwitter( ).signRequest( verifyGet );
+			try {
+				response = client.execute( verifyGet );
+				Log.i( MeetSpace.TAG, "response from twitter: " + response.toString( ) );
+			} catch(IOException e) {
+				//insert onLogoutButtonClicked( );
+				Log.e( MeetSpace.TAG, "Twitter error: " + e.toString( ) );
+			}
+			
+			HttpEntity entity = response.getEntity();
+			return EntityUtils.getContentCharSet(entity);
+		}
+        @Override
+        protected void onExecute(String response){
+			Log.i(MeetSpace.TAG, "twitter response: " + response);
+		}		
 	}
 
 //	private void makeFriendsRequest( ) {
@@ -195,17 +226,17 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	private void lookForARoom( ) {
 //		userLatitude.setText( Double.toString( currentLocation.getLatitude( ) ) );
 		ParseQuery roomQuery = ParseQuery.getQuery( "Room" );
-		roomQuery.whereWithinKilometers( "location", userGeoPoint, SEARCH_RADIUS[currentRadius] );
-		roomQuery.whereEqualTo( "network", getNetwork( ) );
+		roomQuery.whereWithinKilometers( "location", userGeoPoint, MeetSpace.SEARCH_RADIUS[currentRadius] );
+		roomQuery.whereEqualTo( "network", getNetworkName( ) );
 		roomQuery.countInBackground( new CountCallback( ){
 				public void done( int count, ParseException e ) {
 					if( e == null ) {
-						if( count == 0 && currentRadius > SEARCH_RADIUS.length - 2 ) {
+						if( count == 0 && currentRadius > MeetSpace.SEARCH_RADIUS.length - 2 ) {
 							makeNewRoom( );
-						} else if( count == 0 && currentRadius < SEARCH_RADIUS.length - 1 && checkedAbove == false ) {
+						} else if( count == 0 && currentRadius < MeetSpace.SEARCH_RADIUS.length - 1 && checkedAbove == false ) {
 							currentRadius++;
 							lookForARoom( );
-						} else if( count == 0 && currentRadius < SEARCH_RADIUS.length - 1 && checkedAbove == true ) {
+						} else if( count == 0 && currentRadius < MeetSpace.SEARCH_RADIUS.length - 1 && checkedAbove == true ) {
 							//eventually put a query into the upper rooms here, characterize them by preferences, and advertise them to user
 							makeNewRoom( );
 						} else if( count > 1 && currentRadius != 0 ) {
@@ -216,7 +247,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 							Activity activity = ViewerActivity.this;
 							AlertDialog.Builder builder = new AlertDialog.Builder( activity );
 							builder.setMessage( getString( R.string.room_found ) + 
-											   Double.toString( SEARCH_RADIUS[currentRadius] * 1000 ) + 
+											   Double.toString( MeetSpace.SEARCH_RADIUS[currentRadius] * 1000 ) + 
 											   getString( R.string.too_large_prompt ) );
 							builder.setPositiveButton( "Yes", new DialogInterface.OnClickListener( ){
 									public void onClick( DialogInterface dialog, int Id ) {
@@ -243,11 +274,11 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	private void makeNewRoom( ) {
 		if( ParseUser.getCurrentUser( ) != null ) {
 			thisRoom = new ParseObject( "Room" );
-			thisRoom.put( "network", getNetwork( ) );
+			thisRoom.put( "network", getNetworkName( ) );
 			thisRoom.put( "location", userGeoPoint );
 			thisRoom.put( "title", getRoomTitle( ) );
-			ParseRelation roomPopulation = thisRoom.getRelation( "population" );
-			roomPopulation.add( ParseUser.getCurrentUser( ) );
+			ParseRelation population = thisRoom.getRelation( "population" );
+			population.add( ParseUser.getCurrentUser( ) );
 			thisRoom.saveInBackground( new SaveCallback( ){
 					public void done( ParseException e ) {
 						if( e == null ) {
@@ -263,16 +294,20 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	private void joinRoom( ) {
 		Log.i( MeetSpace.TAG, "joining room at radius " + currentRadius );
 		ParseQuery roomQuery = ParseQuery.getQuery( "Room" );
-		roomQuery.whereWithinKilometers( "location", userGeoPoint, SEARCH_RADIUS[currentRadius] );
-		roomQuery.whereEqualTo( "network", getNetwork( ) );
+		roomQuery.whereWithinKilometers( "location", userGeoPoint, MeetSpace.SEARCH_RADIUS[currentRadius] );
+		roomQuery.whereEqualTo( "network", getNetworkName( ) );
 
 		roomQuery.getFirstInBackground( new GetCallback<ParseObject>( ) {
 				public void done( ParseObject room, ParseException e ) {
 					// comments now contains the comments for posts without images.
 					if( e == null ) {
+						if( thisRoom != null ){
+							ParseRelation population = thisRoom.getRelation( "population" );
+							population.remove( ParseUser.getCurrentUser() );
+						}
 						thisRoom = room;
-						ParseRelation roomPopulation = thisRoom.getRelation( "population" );
-						roomPopulation.add( ParseUser.getCurrentUser( ) );
+						ParseRelation population = thisRoom.getRelation( "population" );
+						population.add( ParseUser.getCurrentUser( ) );
 						thisRoom.saveInBackground( new SaveCallback( ){
 								public void done( ParseException e ) {
 									if( e == null ) {
@@ -289,12 +324,12 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	private void refreshRoom( ) {
 		ParseRelation<ParseObject> relation = thisRoom.getRelation( "population" );
 		ParseQuery query = relation.getQuery( );
-//		query.whereNotEqualTo( getNetwork()+"Id", ParseUser.getCurrentUser().get( getNetwork()+"Id" ));
+		query.whereNotEqualTo( getNetworkName()+"Id", ParseUser.getCurrentUser().get( getNetworkName()+"Id" ));
 		query.findInBackground( new FindCallback<ParseObject>( ){
 			    public void done( List<ParseObject> population, ParseException e ) {
 					if( e == null ) {
 						roomPopulation = population.toArray( new ParseUser[population.size( )] );
-						
+
 						NUM_MUGS = roomPopulation.length;
 						adapter.notifyDataSetChanged( );
 					} else {
@@ -307,16 +342,17 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 
 
     //************MeetSpace Helper functions*************//
-	private void setNetwork(int network){
-		if( network == MeetSpace.FACEBOOK ){
-			this.network = "facebook";
-		}
-		else if( network == MeetSpace.TWITTER ){
-			this.network = "twitter";
+	private void setNetwork( int network ) {
+		if( network == MeetSpace.FACEBOOK ) {
+			this.network = MeetSpace.FACEBOOK;
+			this.network_name = "facebook";
+		} else if( network == MeetSpace.TWITTER ) {
+			this.network_name = "twitter";
+			this.network = MeetSpace.TWITTER;
 		}
 	}
-	private String getNetwork( ) {
-		return network;
+	private String getNetworkName( ) {
+		return network_name;
 	}				
 	private String getRoomTitle( ) {
 		return "Public Room";
@@ -331,6 +367,12 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 
 	//**********Logout********//
 	private void onLogoutButtonClicked( ) {
+		loggingOut = true;
+		if( thisRoom != null ){
+			ParseRelation population = thisRoom.getRelation( "population" );
+			population.remove(ParseUser.getCurrentUser());
+			thisRoom.saveInBackground();
+		}
 		ParseUser.logOut( );
 		startLoginActivity( );
 	}
@@ -342,9 +384,9 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		startActivity( intent );
 	}
 
-	
-	
-	
+
+
+
 	//***********Location Functions ********************//
 	private ParseGeoPoint geoPointFromLocation( Location loc ) {return new ParseGeoPoint( loc.getLatitude( ), loc.getLongitude( ) );}
 
@@ -411,7 +453,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 			try {
 
 				// Start an Activity that tries to resolve the error
-				connectionResult.startResolutionForResult( this, CONNECTION_FAILURE_RESOLUTION_REQUEST );
+				connectionResult.startResolutionForResult( this, MeetSpace.CONNECTION_FAILURE_RESOLUTION_REQUEST );
 
 			} catch(IntentSender.SendIntentException e) {
 
@@ -452,7 +494,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 
 		Dialog errorDialog =
 			GooglePlayServicesUtil.getErrorDialog( errorCode, this,
-												  CONNECTION_FAILURE_RESOLUTION_REQUEST );
+												  MeetSpace.CONNECTION_FAILURE_RESOLUTION_REQUEST );
 
 		// If Google Play services can provide an error dialog
 		if( errorDialog != null ) {
@@ -480,8 +522,8 @@ GooglePlayServicesClient.OnConnectionFailedListener {
         }
     }
 
-	
-	
+
+
 	//******************Adapters********************//
 	private class ScreenSlidePagerAdapter extends FragmentStatePagerAdapter {
         public ScreenSlidePagerAdapter( FragmentManager fm ) {
@@ -491,10 +533,10 @@ GooglePlayServicesClient.OnConnectionFailedListener {
         @Override
         public Fragment getItem( int position ) {
             ScreenSlidePageFragment fragment = new ScreenSlidePageFragment( );
-			String profileIdString = roomPopulation[position].getString( getNetwork() + "Id" );
+			String profileIdString = roomPopulation[position].getString( getNetworkName( ) + "Id" );
 			String profileName = roomPopulation[position].getString( "name" );
-			fragment.setId(profileIdString);
-			fragment.setName(profileName);
+			fragment.setId( profileIdString );
+			fragment.setName( profileName );
 			return fragment;
         }
 

@@ -10,10 +10,32 @@ import com.parse.*;
 
 public class MeetSpace extends Application {
 //Hotel Utah 415.495.0617
-    public static final Boolean APPDEBUG = true;
-    public static final String TAG = "MeetSpace";
-	public static final int TWITTER = 44;
-	public static final int FACEBOOK = 55;
+//NFC will send to server URI, which will relay to app store, 
+//which can register the IP address?
+//then recognise user and send ID of originator
+//
+//Or Originator is marked as first on a stack of users in the room
+//who have originated
+//assume all users in a room have similar data connectivitiy
+//and so connect to the bottom of whatever the room stack is
+//so can I get a callback for successul ndef send?
+//then new user logic is seeing bottom of nfc stack
+//(if NFC, maybe if recent NFC?)
+//then friending that user
+//could maybe do a check in with the server to see if 
+//they visited it just recently
+//if not, then leave user illuminiated
+//certainly only turn off illumination if user selects profile right off
+//maybe just always show stack in order, cutting down at 5-10 minutes
+//popping off bottom on immediate freinding
+//
+    protected static final Boolean APPDEBUG = false;
+    protected static final String TAG = "MeetSpace";
+	protected static final int TWITTER = 44;
+	protected static final int FACEBOOK = 55;
+	protected static final int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
+    protected static final double[] SEARCH_RADIUS = {.001, .004, .008, .016, .032, .064, .096, .2, .4, .8, 1.4, 2};
+	protected static final int TWELVE_SECONDS = 12000;
 	
     private volatile static Context context;
 	@Override
