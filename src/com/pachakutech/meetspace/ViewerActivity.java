@@ -20,7 +20,6 @@ import com.parse.ParseFacebookUtils;
 import com.parse.ParseUser;
 import java.util.*;
 import com.facebook.*;
-import org.json.*;
 import com.google.android.gms.common.*;
 import android.support.v4.app.*;
 import android.app.AlertDialog;
@@ -45,6 +44,7 @@ import java.nio.*;
 import org.apache.http.HttpEntity;
 import org.apache.http.util.*;
 import android.util.*;
+import com.google.gson.*;
 
 public class ViewerActivity extends FragmentActivity implements LocationListener,
 GooglePlayServicesClient.ConnectionCallbacks,
@@ -63,13 +63,12 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	private ViewPager pager;
 	private ParseObject thisRoom = null;
 	private ParseUser[] roomPopulation;
-    private ViewerActivity.ScreenSlidePagerAdapter adapter;
+    private ViewerActivity.FacebookSlidePagerAdapter fbAdapter;
+	private ViewerActivity.TwitterSlidePagerAdapter twAdapter;
 	private String network_name;
-
 	private int network;
 
-	private boolean loggingOut = false
-	;
+	private boolean loggingOut = false;
 
 
 
@@ -78,7 +77,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		super.onCreate( savedInstanceState );
 
 		setContentView( R.layout.userdetails );
-
+		
 		logoutButton = (Button) findViewById( R.id.logoutButton );
 		logoutButton.setOnClickListener( new View.OnClickListener( ) {
 				@Override
@@ -92,23 +91,24 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		locationRequest.setPriority( LocationRequest.PRIORITY_HIGH_ACCURACY );
 		locationRequest.setFastestInterval( MeetSpace.TWELVE_SECONDS / 120 );
 		locationClient = new LocationClient( this, this, this );
-
+		
 		pager = (ViewPager) findViewById( R.id.pager );
 		pager.setId( 0x7F04FAF0 );
 		//	pager.setPageTransformer(true, new ZoomOutPageTransformer());
-		adapter = new ScreenSlidePagerAdapter( getSupportFragmentManager( ) );
-		pager.setAdapter( adapter );
+		fbAdapter = new FacebookSlidePagerAdapter( getSupportFragmentManager( ) );
+		twAdapter = new TwitterSlidePagerAdapter( getSupportFragmentManager( ) );
 		if( network == MeetSpace.FACEBOOK ) {
-			
+			pager.setAdapter( fbAdapter );
 			// Fetch Facebook user info if the session is active
 			Session session = ParseFacebookUtils.getSession( );
-
 			if( session != null && session.isOpened( ) ) {
 				getFbId( );
 //			makeFriendsRequest( );
 			} else Log.e( MeetSpace.TAG, "no request made" );
-		} else if( network == MeetSpace.TWITTER ){
-			new GetTwitterId().execute();
+		} else if( network == MeetSpace.TWITTER ) {
+			Log.i(MeetSpace.TAG, "decided this was twitter");
+			new GetTwitterId( ).execute( );
+			pager.setAdapter( twAdapter );
 		}
 	}
 
@@ -129,10 +129,10 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 
 	@Override
 	public void onStop( ) {
-		if( thisRoom != null &&loggingOut == false){
+		if( thisRoom != null && loggingOut == false ) {
 			ParseRelation population = thisRoom.getRelation( "population" );
-			population.remove(ParseUser.getCurrentUser());
-			thisRoom.saveInBackground();
+			population.remove( ParseUser.getCurrentUser( ) );
+			thisRoom.saveInBackground( );
 		}
 		if( locationClient.isConnected( ) ) stopPeriodicUpdates( );
 		locationClient.disconnect( );
@@ -146,7 +146,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 				public void onCompleted( GraphUser user, Response response ) {
 					if( user != null ) {
 						ParseUser currentUser = ParseUser.getCurrentUser( );
-						currentUser.put( "facebookId", user.getId( ) );
+						currentUser.put( network_name + "Id", user.getId( ) );
 						currentUser.put( "name", user.getName( ) );
 						currentUser.saveInBackground( );
 					} else if( response.getError( ) != null ) {
@@ -161,43 +161,39 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		request.executeAsync( );
 	}
 
-	private class GetTwitterId extends AsyncTask<Void, Void, Integer> {
+	private class GetTwitterId extends AsyncTask<Void, Void, String> {
 
 		@Override
-		protected Integer doInBackground( Void[] v ) {
-			HttpClient client = new DefaultHttpClient( );
-			Integer response = null;
+		protected String doInBackground( Void[] v ) {
+
+			String response = "";
+			final HttpClient client = new DefaultHttpClient( );
 			HttpGet verifyGet = new HttpGet(
 				"https://api.twitter.com/1.1/account/verify_credentials.json?include_user_entities=false&include_entities=false&skip_status=true" );
 			ParseTwitterUtils.getTwitter( ).signRequest( verifyGet );
-			try {
-				JsonReader reader = new JsonReader(new InputStreamReader( client.execute( verifyGet ).getEntity( ).getContent( ) ) ) ;
-				reader.beginObject( );
-					String name = reader.nextName( );
-					if( name.equals( "id" ) ){
-						response = reader.nextInt( );
-						Log.i(MeetSpace.TAG, "twitter id: " + response);
-				    } else Log.i( MeetSpace.TAG, "bad json from twitter" );
-				Log.i( MeetSpace.TAG, "response from twitter: " + EntityUtils.toString( client.execute( verifyGet ).getEntity( ) ) );
-//				Log.i( MeetSpace.TAG, "length of response from twitter: " + response.getEntity().getContent().toString());
-			} catch(IOException e) {
-				//insert onLogoutButtonClicked( );
-				Log.e( MeetSpace.TAG, "Twitter error: " + e.toString( ) );
-			}
+			try { response = EntityUtils.toString( client.execute( verifyGet ).getEntity( ) );
+			} catch(IOException e) {Log.e( MeetSpace.TAG, "Twitter error: " + e.toString( ) );}
 			return response;
 		}
+
         @Override
-        protected void onExecute(Integer response){
-			Log.i(MeetSpace.TAG, "twitter id: " + response);
+        protected void onPostExecute( String response ) {
+			final JsonObject jsonObj = (new JsonParser().parse(response)).getAsJsonObject();
+			ParseUser currentUser = ParseUser.getCurrentUser( );
+			Log.i( MeetSpace.TAG, "response from twitter: " + response );
+			Log.i( MeetSpace.TAG, "response id: " + jsonObj.get("id_str").getAsString() + " response name: " + jsonObj.get("screen_name") + "cameo URL: " +jsonObj.get("profile_image_url")  );
+			currentUser.put( network_name + "Id", jsonObj.get("id_str").getAsString() );
+			currentUser.put( "name", jsonObj.get("screen_name").getAsString() );
+			currentUser.put( "cameoURL", jsonObj.get("profile_image_url").getAsString() );
+			currentUser.saveInBackground( );
 		}		
 	}
 
     //**********Room Checking, Creating, and Adding self******//
 	private void lookForARoom( ) {
-//		userLatitude.setText( Double.toString( currentLocation.getLatitude( ) ) );
 		ParseQuery roomQuery = ParseQuery.getQuery( "Room" );
 		roomQuery.whereWithinKilometers( "location", userGeoPoint, MeetSpace.SEARCH_RADIUS[currentRadius] );
-		roomQuery.whereEqualTo( "network", getNetworkName( ) );
+		roomQuery.whereEqualTo( "network", network_name );
 		roomQuery.countInBackground( new CountCallback( ){
 				public void done( int count, ParseException e ) {
 					if( e == null ) {
@@ -244,7 +240,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	private void makeNewRoom( ) {
 		if( ParseUser.getCurrentUser( ) != null ) {
 			thisRoom = new ParseObject( "Room" );
-			thisRoom.put( "network", getNetworkName( ) );
+			thisRoom.put( "network", network_name );
 			thisRoom.put( "location", userGeoPoint );
 			thisRoom.put( "title", getRoomTitle( ) );
 			ParseRelation population = thisRoom.getRelation( "population" );
@@ -265,15 +261,15 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		Log.i( MeetSpace.TAG, "joining room at radius " + currentRadius );
 		ParseQuery roomQuery = ParseQuery.getQuery( "Room" );
 		roomQuery.whereWithinKilometers( "location", userGeoPoint, MeetSpace.SEARCH_RADIUS[currentRadius] );
-		roomQuery.whereEqualTo( "network", getNetworkName( ) );
+		roomQuery.whereEqualTo( "network", network_name );
 
 		roomQuery.getFirstInBackground( new GetCallback<ParseObject>( ) {
 				public void done( ParseObject room, ParseException e ) {
 					// comments now contains the comments for posts without images.
 					if( e == null ) {
-						if( thisRoom != null ){
+						if( thisRoom != null ) {
 							ParseRelation population = thisRoom.getRelation( "population" );
-							population.remove( ParseUser.getCurrentUser() );
+							population.remove( ParseUser.getCurrentUser( ) );
 						}
 						thisRoom = room;
 						ParseRelation population = thisRoom.getRelation( "population" );
@@ -294,14 +290,15 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	private void refreshRoom( ) {
 		ParseRelation<ParseObject> relation = thisRoom.getRelation( "population" );
 		ParseQuery query = relation.getQuery( );
-		query.whereNotEqualTo( getNetworkName()+"Id", ParseUser.getCurrentUser().get( getNetworkName()+"Id" ));
+//		query.whereNotEqualTo( network_name + "Id", ParseUser.getCurrentUser( ).get( network_name + "Id" ) );
 		query.findInBackground( new FindCallback<ParseObject>( ){
 			    public void done( List<ParseObject> population, ParseException e ) {
 					if( e == null ) {
 						roomPopulation = population.toArray( new ParseUser[population.size( )] );
-
 						NUM_MUGS = roomPopulation.length;
-						adapter.notifyDataSetChanged( );
+						Log.i(MeetSpace.TAG, "Setting number of mugs@ " + NUM_MUGS);
+						fbAdapter.notifyDataSetChanged( );
+						twAdapter.notifyDataSetChanged( );
 					} else {
 						//something went wrong
 					}
@@ -321,9 +318,11 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 			this.network = MeetSpace.TWITTER;
 		}
 	}
-	private String getNetworkName( ) {
-		return network_name;
-	}				
+	
+	public int getNetwork( ) {
+		return network;
+	}
+
 	private String getRoomTitle( ) {
 		return "Public Room";
 	}
@@ -338,10 +337,10 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	//**********Logout********//
 	private void onLogoutButtonClicked( ) {
 		loggingOut = true;
-		if( thisRoom != null ){
+		if( thisRoom != null ) {
 			ParseRelation population = thisRoom.getRelation( "population" );
-			population.remove(ParseUser.getCurrentUser());
-			thisRoom.saveInBackground();
+			population.remove( ParseUser.getCurrentUser( ) );
+			thisRoom.saveInBackground( );
 		}
 		ParseUser.logOut( );
 		startLoginActivity( );
@@ -492,21 +491,17 @@ GooglePlayServicesClient.OnConnectionFailedListener {
         }
     }
 
-
-
 	//******************Adapters********************//
-	private class ScreenSlidePagerAdapter extends FragmentStatePagerAdapter {
-        public ScreenSlidePagerAdapter( FragmentManager fm ) {
+	private class FacebookSlidePagerAdapter extends FragmentStatePagerAdapter {
+        public FacebookSlidePagerAdapter( FragmentManager fm ) {
             super( fm );
         }
 
         @Override
         public Fragment getItem( int position ) {
-            ScreenSlidePageFragment fragment = new ScreenSlidePageFragment( );
-			String profileIdString = roomPopulation[position].getString( getNetworkName( ) + "Id" );
-			String profileName = roomPopulation[position].getString( "name" );
-			fragment.setId( profileIdString );
-			fragment.setName( profileName );
+            FacebookSlidingPageFragment fragment = new FacebookSlidingPageFragment( );
+			fragment.setId( roomPopulation[position].getString( network_name + "Id" ) );
+			fragment.setName( roomPopulation[position].getString( "name" ) );
 			return fragment;
         }
 
@@ -515,7 +510,28 @@ GooglePlayServicesClient.OnConnectionFailedListener {
             return NUM_MUGS;
         }
     }
+	
+	private class TwitterSlidePagerAdapter extends FragmentStatePagerAdapter {
+        public TwitterSlidePagerAdapter( FragmentManager fm ) {
+            super( fm );
+        }
 
+        @Override
+        public Fragment getItem( int position ) {
+            TwitterSlidingPageFragment fragment = new TwitterSlidingPageFragment( );
+			fragment.setId( roomPopulation[position].getString( network_name + "Id" ) );
+			fragment.setName( roomPopulation[position].getString( "name" ) );
+			fragment.setCameoURL( roomPopulation[position].getString( "cameoURL" ) );
+			return fragment;
+        }
+
+        @Override
+        public int getCount( ) {
+			Log.i(MeetSpace.TAG, "started twitter adapter with " + NUM_MUGS + " rows");
+            return NUM_MUGS;
+        }
+    }
+	
 	//******************Fragments********************//
 	public static class ErrorDialogFragment extends DialogFragment {
 		private Dialog dialog;
@@ -569,5 +585,5 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 //		request.executeAsync( );
 //	}
 //	
-	
+
 }
