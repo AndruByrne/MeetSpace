@@ -20,6 +20,8 @@ import android.app.AlertDialog;
 import android.graphics.drawable.*;
 import java.io.*;
 import java.net.*;
+import android.graphics.*;
+import android.os.*;
 
 public class TwitterSlidingPageFragment extends Fragment {
 
@@ -43,11 +45,9 @@ public class TwitterSlidingPageFragment extends Fragment {
 		ViewGroup view = (ViewGroup) inflater.inflate( R.layout.tw_mugs, container, false );
 		ImageView profilePictureView = (ImageView) view.findViewById( R.id.profilePicture );
 		TextView profileNameView = (TextView) view.findViewById( R.id.profileName );
-        try {
-			//Oh, it does NOT like this!!!
-			profilePictureView.setImageDrawable( Drawable.createFromStream( (InputStream)new URL( cameoURL ).getContent( ), "src" ) );
-			Log.i(MeetSpace.TAG, "Attempted to show image at " + cameoURL);
-		} catch(IOException e) {Log.e(MeetSpace.TAG, "Image Error in twitter fragment"+ e.toString());}
+	    //if null in user field, can init laoding animation here
+		new LoadPicture( profilePictureView ).execute(cameoURL);
+			Log.i( MeetSpace.TAG, "Attempted to show image at " + cameoURL );
 		//profilePictureView.setProfileId( Id );
 		profileNameView.setText( Name );
 		Log.i( MeetSpace.TAG, "twitter id: " + Id );
@@ -100,6 +100,27 @@ public class TwitterSlidingPageFragment extends Fragment {
 				}
 			} );
 		dialog.show( );
+	}
+	private class LoadPicture extends AsyncTask<String, Void, Bitmap> {
+		ImageView view;
+
+		public LoadPicture( ImageView v ) { this.view = v; }
+
+		protected Bitmap doInBackground( String... urls ) {
+			Bitmap profilePic = null;
+			//may not be right
+			try {
+				InputStream in = new java.net.URL( urls[0] ).openStream( );
+				profilePic = BitmapFactory.decodeStream( in );
+			} catch(IOException e) {
+				Log.e( MeetSpace.TAG, "Error: " + e.getMessage( ) );
+				e.printStackTrace( );
+			}
+			return profilePic;
+		}
+		protected void onPostExecute(Bitmap profilePic){
+			view.setImageBitmap(profilePic);
+		}
 	}
 }
 	
