@@ -36,7 +36,6 @@ public class FacebookSlidingPageFragment extends Fragment {
 		TextView profileNameView = (TextView) view.findViewById( R.id.profileName );
 		profilePictureView.setProfileId( Id );
 		profileNameView.setText( Name );
-		Log.i( MeetSpace.TAG, "twitter id: "+ Id);
 		profilePictureView.setOnClickListener( new OnClickListener( ){
 				public void onClick( View v ) {
 					sendRequestDialog( );

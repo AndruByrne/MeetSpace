@@ -22,6 +22,11 @@ import java.io.*;
 import java.net.*;
 import android.graphics.*;
 import android.os.*;
+import org.apache.http.client.*;
+import org.apache.http.client.methods.*;
+import org.apache.http.util.*;
+import org.apache.http.impl.client.*;
+import com.google.gson.*;
 
 public class TwitterSlidingPageFragment extends Fragment {
 
@@ -45,62 +50,99 @@ public class TwitterSlidingPageFragment extends Fragment {
 		ViewGroup view = (ViewGroup) inflater.inflate( R.layout.tw_mugs, container, false );
 		ImageView profilePictureView = (ImageView) view.findViewById( R.id.profilePicture );
 		TextView profileNameView = (TextView) view.findViewById( R.id.profileName );
+        
 	    //if null in user field, can init laoding animation here
-		new LoadPicture( profilePictureView ).execute(cameoURL);
-			Log.i( MeetSpace.TAG, "Attempted to show image at " + cameoURL );
-		//profilePictureView.setProfileId( Id );
+		new LoadPicture( profilePictureView ).execute( cameoURL );
 		profileNameView.setText( Name );
-		Log.i( MeetSpace.TAG, "twitter id: " + Id );
-		profilePictureView.setOnClickListener( new OnClickListener( ){
+
+        profilePictureView.setOnClickListener( new OnClickListener( ){
 				public void onClick( View v ) {
-                    sendRequestDialog( );
+                    new FriendOnTwitter().execute();
 				}
-			} );
-		profilePictureView.setOnLongClickListener( new OnLongClickListener( ) { 
+		    } );
+        profilePictureView.setOnLongClickListener( new OnLongClickListener( ) { 
 				@Override
 				public boolean onLongClick( View v ) {
 					//same thing, but for twitter
 					try {
-						//try to open page in facebook native app.
-						String uri = "fb://page/" + Id;    //Cutsom URL
-						Intent intent = new Intent( Intent.ACTION_VIEW, Uri.parse( uri ) );
-						startActivity( intent );   
+						//try to open page in twitter native app.
+						String uri = "twitter://user?user_id=" + Id;    //Cutsom URL
+						startActivity( new Intent( Intent.ACTION_VIEW, Uri.parse( uri ) ) );   
 					} catch(ActivityNotFoundException ex) {
-						//facebook native app isn't available, use browser.
-						String uriWeb = "http://facebook.com/profile.php?id=" + Id;  //Normal URL  
+						//twitter native app isn't available, use browser.
+						String uriWeb = "http://twitter.com/intent/user?user_id=" + Id;  //Normal URL  
 						Intent i = new Intent( Intent.ACTION_VIEW, Uri.parse( uriWeb ) );    
 						startActivity( i ); 
 					}
-
 					return true;
 				}
 			} );
 		return view;		
 	}
-	private void sendRequestDialog( ) {
-		//something twitter instead
-		String requestUri = "https://www.facebook.com/dialog/friends/?id=" +
-			Id + "&app_id=" + getString( R.string.fb_app_id ) +
-			"&redirect_uri=http://www.facebook.com";
-		WebView webView = new WebView( this.getActivity( ) );
-		webView.getSettings( ).setUserAgentString( getString( R.string.user_agent_string ) );
-		webView.setWebViewClient( new WebViewClient( ){
-				public boolean shouldOverrideUrlLoading( WebView view, String url ) {
-					return false;
-				}
-			} );
-		webView.loadUrl( requestUri );
-		AlertDialog.Builder dialog = new AlertDialog.Builder( this.getActivity( ) );
-		dialog.setView( webView );
-		dialog.setPositiveButton( "Done", new DialogInterface.OnClickListener( ) {
+    
+    private class FriendOnTwitter extends AsyncTask<Void, Void, String> {
 
-				public void onClick( DialogInterface dialog, int which ) {
+        @Override
+        protected String doInBackground( Void[] v ) {
 
-					dialog.dismiss( );
-				}
-			} );
-		dialog.show( );
+            String response = "";
+            final HttpClient client = new DefaultHttpClient( );
+            HttpPost verifyPost = new HttpPost(
+                "https://api.twitter.com/1.1/friendships/create.json?user_id="+Id+"&follow=true" );
+            ParseTwitterUtils.getTwitter( ).signRequest( verifyPost );
+            try { response = EntityUtils.toString( client.execute( verifyPost ).getEntity( ) );
+            } catch(IOException e) {Log.e( MeetSpace.TAG, "Twitter error: " + e.toString( ) );}
+            return response;
+        }
+
+        @Override
+        protected void onPostExecute( String response ) {
+            final JsonObject jsonObj = (new JsonParser().parse(response)).getAsJsonObject();
+			Log.i(MeetSpace.TAG, "response: " + response);
+			Log.i(MeetSpace.TAG, "response: " + jsonObj.get( "errors" ).getAsJsonArray().toString());
+			boolean checked = jsonObj.getAsJsonArray("error") == null ? successfulNotice() : responseError(jsonObj);
+			//above works, this needs to go
+			Log.i(MeetSpace.TAG, "unable to follow, error: " + jsonObj.getAsJsonArray( "error" ).getAsString());
+            if( !checked ) Log.i( MeetSpace.TAG, "Uncaught error: " + response );
+        }
+		
+		private boolean successfulNotice(){
+            Toast.makeText(MeetSpace.getContext(), "Successfully following this person; hold down on their picture to see their profile", Toast.LENGTH_LONG).show();
+			return true;
+		}
+		
+		private boolean responseError(JsonObject jsonObj){
+			Log.i(MeetSpace.TAG, "unable to follow, error: " + jsonObj.getAsJsonArray( "error" ).getAsJsonObject().get("message").getAsString());
+//            Log.i( MeetSpace.TAG, "response id: " + jsonObj.get("id_str").getAsString() + " response name: " + jsonObj.get("screen_name") + "cameo URL: " +jsonObj.get("profile_image_url")  );
+			return true;
+		}
 	}
+    
+//	private void sendRequestDialog( ) {
+//		//something twitter instead
+//		String requestUri = "https://www.facebook.com/dialog/friends/?id=" +
+//			Id + "&app_id=" + getString( R.string.fb_app_id ) +
+//			"&redirect_uri=http://www.facebook.com";
+//		WebView webView = new WebView( this.getActivity( ) );
+//		webView.getSettings( ).setUserAgentString( getString( R.string.user_agent_string ) );
+//		webView.setWebViewClient( new WebViewClient( ){
+//				public boolean shouldOverrideUrlLoading( WebView view, String url ) {
+//					return false;
+//				}
+//			} );
+//		webView.loadUrl( requestUri );
+//		AlertDialog.Builder dialog = new AlertDialog.Builder( this.getActivity( ) );
+//		dialog.setView( webView );
+//		dialog.setPositiveButton( "Done", new DialogInterface.OnClickListener( ) {
+//
+//				public void onClick( DialogInterface dialog, int which ) {
+//
+//					dialog.dismiss( );
+//				}
+//			} );
+//		dialog.show( );
+//	}
+	
 	private class LoadPicture extends AsyncTask<String, Void, Bitmap> {
 		ImageView view;
 
@@ -108,7 +150,6 @@ public class TwitterSlidingPageFragment extends Fragment {
 
 		protected Bitmap doInBackground( String... urls ) {
 			Bitmap profilePic = null;
-			//may not be right
 			try {
 				InputStream in = new java.net.URL( urls[0] ).openStream( );
 				profilePic = BitmapFactory.decodeStream( in );
@@ -118,10 +159,9 @@ public class TwitterSlidingPageFragment extends Fragment {
 			}
 			return profilePic;
 		}
-		protected void onPostExecute(Bitmap profilePic){
-			view.setImageBitmap(profilePic);
+		protected void onPostExecute( Bitmap profilePic ) {
+			view.setImageBitmap( profilePic );
 		}
 	}
 }
-	
 

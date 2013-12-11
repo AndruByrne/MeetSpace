@@ -106,7 +106,6 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 //			makeFriendsRequest( );
 			} else Log.e( MeetSpace.TAG, "no request made" );
 		} else if( network == MeetSpace.TWITTER ) {
-			Log.i(MeetSpace.TAG, "decided this was twitter");
 			new GetTwitterId( ).execute( );
 			pager.setAdapter( twAdapter );
 		}
@@ -180,11 +179,9 @@ GooglePlayServicesClient.OnConnectionFailedListener {
         protected void onPostExecute( String response ) {
 			final JsonObject jsonObj = (new JsonParser().parse(response)).getAsJsonObject();
 			ParseUser currentUser = ParseUser.getCurrentUser( );
-			Log.i( MeetSpace.TAG, "response from twitter: " + response );
-			Log.i( MeetSpace.TAG, "response id: " + jsonObj.get("id_str").getAsString() + " response name: " + jsonObj.get("screen_name") + "cameo URL: " +jsonObj.get("profile_image_url")  );
 			currentUser.put( network_name + "Id", jsonObj.get("id_str").getAsString() );
 			currentUser.put( "name", jsonObj.get("screen_name").getAsString() );
-			currentUser.put( "cameoURL", jsonObj.get("profile_image_url").getAsString() );
+			currentUser.put( "cameoURL", jsonObj.get("profile_image_url").getAsString().replace("_normal", "") );
 			currentUser.saveInBackground( );
 		}		
 	}
@@ -527,8 +524,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 
         @Override
         public int getCount( ) {
-			Log.i(MeetSpace.TAG, "started twitter adapter with " + NUM_MUGS + " rows");
-            return NUM_MUGS;
+		    return NUM_MUGS;
         }
     }
 	
