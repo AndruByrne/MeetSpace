@@ -18,5 +18,6 @@
 	<string name="user_agent_string">Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.4) Gecko/20100101 Firefox/4.0</string>
 	<string name="room_found">A posse was found </string>
 	<string name="too_large_prompt"> meters away, would you like to create your own room?</string> 
-    
+    <string name="twitter_follow_success">Successfully following this person; hold down on their picture to see their profile</string>
+	
 </resources>

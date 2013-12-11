@@ -47,13 +47,11 @@ public class FacebookSlidingPageFragment extends Fragment {
 						try {
 							//try to open page in facebook native app.
 							String uri = "fb://page/" + Id;    //Cutsom URL
-							Intent intent = new Intent( Intent.ACTION_VIEW, Uri.parse( uri ) );
-							startActivity( intent );   
+							startActivity( new Intent( Intent.ACTION_VIEW, Uri.parse( uri ) ) );   
 						} catch(ActivityNotFoundException ex) {
 							//facebook native app isn't available, use browser.
 							String uriWeb = "http://facebook.com/profile.php?id=" + Id;  //Normal URL  
-							Intent i = new Intent( Intent.ACTION_VIEW, Uri.parse( uriWeb ) );    
-							startActivity( i ); 
+							startActivity( new Intent( Intent.ACTION_VIEW, Uri.parse( uriWeb ) ) ); 
 						}
 					return true;
 				}
@@ -75,9 +73,7 @@ public class FacebookSlidingPageFragment extends Fragment {
 		AlertDialog.Builder dialog = new AlertDialog.Builder( this.getActivity( ) );
 		dialog.setView( webView );
 		dialog.setPositiveButton( "Done", new DialogInterface.OnClickListener( ) {
-
 				public void onClick( DialogInterface dialog, int which ) {
-
 					dialog.dismiss( );
 				}
 			} );

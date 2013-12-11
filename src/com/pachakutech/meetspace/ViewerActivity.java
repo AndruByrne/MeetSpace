@@ -85,12 +85,6 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 			} );
 
         setNetwork( getIntent( ).getExtras( ).getInt( "network" ) );
-		// Create a new global location parameters object
-		locationRequest = LocationRequest.create( );
-		locationRequest.setInterval( MeetSpace.TWELVE_SECONDS / 12 );
-		locationRequest.setPriority( LocationRequest.PRIORITY_HIGH_ACCURACY );
-		locationRequest.setFastestInterval( MeetSpace.TWELVE_SECONDS / 120 );
-		locationClient = new LocationClient( this, this, this );
 		
 		pager = (ViewPager) findViewById( R.id.pager );
 		pager.setId( 0x7F04FAF0 );
@@ -120,10 +114,27 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	@Override
 	public void onResume( ) {
 		super.onResume( );
+	    //reset room searching params
 		checkedAbove = false;
+		// Create a new global location parameters object
+		locationRequest = LocationRequest.create( );
+		locationRequest.setInterval( MeetSpace.TWELVE_SECONDS / 12 );
+		locationRequest.setPriority( LocationRequest.PRIORITY_HIGH_ACCURACY );
+		locationRequest.setFastestInterval( MeetSpace.TWELVE_SECONDS / 120 );
+		locationClient = new LocationClient( this, this, this );
+		
 		ParseUser currentUser = ParseUser.getCurrentUser( );
 		if( currentUser != null ) updateViewsWithSelfProfileInfo( );
 		else startLoginActivity( );
+	}
+
+	@Override
+	public void onPause( ){
+		super.onPause();
+		locationClient.removeLocationUpdates(this);
+		locationClient.unregisterConnectionCallbacks(this);
+		locationClient.unregisterConnectionFailedListener(this);
+		locationClient.disconnect();
 	}
 
 	@Override
@@ -188,10 +199,10 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 
     //**********Room Checking, Creating, and Adding self******//
 	private void lookForARoom( ) {
-		ParseQuery roomQuery = ParseQuery.getQuery( "Room" );
-		roomQuery.whereWithinKilometers( "location", userGeoPoint, MeetSpace.SEARCH_RADIUS[currentRadius] );
-		roomQuery.whereEqualTo( "network", network_name );
-		roomQuery.countInBackground( new CountCallback( ){
+//		ParseQuery roomQuery = ParseQuery.getQuery( "Room" );
+		ParseQuery.getQuery( "Room" ).whereWithinKilometers( "location", userGeoPoint, MeetSpace.SEARCH_RADIUS[currentRadius] )
+		         .whereEqualTo( "network", network_name )
+		         .countInBackground( new CountCallback( ){
 				public void done( int count, ParseException e ) {
 					if( e == null ) {
 						if( count == 0 && currentRadius > MeetSpace.SEARCH_RADIUS.length - 2 ) {
@@ -240,8 +251,8 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 			thisRoom.put( "network", network_name );
 			thisRoom.put( "location", userGeoPoint );
 			thisRoom.put( "title", getRoomTitle( ) );
-			ParseRelation population = thisRoom.getRelation( "population" );
-			population.add( ParseUser.getCurrentUser( ) );
+//			ParseRelation population = thisRoom.getRelation( "population" );
+			thisRoom.getRelation( "population" ).add( ParseUser.getCurrentUser( ) );
 			thisRoom.saveInBackground( new SaveCallback( ){
 					public void done( ParseException e ) {
 						if( e == null ) {
@@ -265,12 +276,12 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 					// comments now contains the comments for posts without images.
 					if( e == null ) {
 						if( thisRoom != null ) {
-							ParseRelation population = thisRoom.getRelation( "population" );
-							population.remove( ParseUser.getCurrentUser( ) );
+//							ParseRelation population = thisRoom.getRelation( "population" );
+							thisRoom.getRelation( "population" ).remove( ParseUser.getCurrentUser( ) );
 						}
 						thisRoom = room;
-						ParseRelation population = thisRoom.getRelation( "population" );
-						population.add( ParseUser.getCurrentUser( ) );
+//						ParseRelation population = thisRoom.getRelation( "population" );
+						thisRoom.getRelation( "population" ).add( ParseUser.getCurrentUser( ) );
 						thisRoom.saveInBackground( new SaveCallback( ){
 								public void done( ParseException e ) {
 									if( e == null ) {
@@ -285,15 +296,18 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 			} );
 	}
 	private void refreshRoom( ) {
-		ParseRelation<ParseObject> relation = thisRoom.getRelation( "population" );
-		ParseQuery query = relation.getQuery( );
+//		ParseRelation<ParseObject> relation = thisRoom.getRelation( "population" );
+//		ParseQuery query = relation.getQuery( );
 //		query.whereNotEqualTo( network_name + "Id", ParseUser.getCurrentUser( ).get( network_name + "Id" ) );
-		query.findInBackground( new FindCallback<ParseObject>( ){
+		thisRoom.getRelation( "population")
+		        .getQuery()
+//			    .whereNotEqualTo( network_name + "Id", ParseUser.getCurrentUser( ).get( network_name + "Id" ) )
+		        .findInBackground( new FindCallback<ParseObject>( ){
 			    public void done( List<ParseObject> population, ParseException e ) {
 					if( e == null ) {
 						roomPopulation = population.toArray( new ParseUser[population.size( )] );
 						NUM_MUGS = roomPopulation.length;
-						Log.i(MeetSpace.TAG, "Setting number of mugs@ " + NUM_MUGS);
+//						Log.i(MeetSpace.TAG, "Setting number of mugs@ " + NUM_MUGS);
 						fbAdapter.notifyDataSetChanged( );
 						twAdapter.notifyDataSetChanged( );
 					} else {

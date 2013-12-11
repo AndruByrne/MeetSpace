@@ -54,7 +54,6 @@ public class TwitterSlidingPageFragment extends Fragment {
 	    //if null in user field, can init laoding animation here
 		new LoadPicture( profilePictureView ).execute( cameoURL );
 		profileNameView.setText( Name );
-
         profilePictureView.setOnClickListener( new OnClickListener( ){
 				public void onClick( View v ) {
                     new FriendOnTwitter().execute();
@@ -71,8 +70,7 @@ public class TwitterSlidingPageFragment extends Fragment {
 					} catch(ActivityNotFoundException ex) {
 						//twitter native app isn't available, use browser.
 						String uriWeb = "http://twitter.com/intent/user?user_id=" + Id;  //Normal URL  
-						Intent i = new Intent( Intent.ACTION_VIEW, Uri.parse( uriWeb ) );    
-						startActivity( i ); 
+						startActivity( new Intent( Intent.ACTION_VIEW, Uri.parse( uriWeb ) ) ); 
 					}
 					return true;
 				}
@@ -98,50 +96,21 @@ public class TwitterSlidingPageFragment extends Fragment {
         @Override
         protected void onPostExecute( String response ) {
             final JsonObject jsonObj = (new JsonParser().parse(response)).getAsJsonObject();
-			Log.i(MeetSpace.TAG, "response: " + response);
 			Log.i(MeetSpace.TAG, "response: " + jsonObj.get( "errors" ).getAsJsonArray().toString());
-			boolean checked = jsonObj.getAsJsonArray("error") == null ? successfulNotice() : responseError(jsonObj);
-			//above works, this needs to go
-			Log.i(MeetSpace.TAG, "unable to follow, error: " + jsonObj.getAsJsonArray( "error" ).getAsString());
-            if( !checked ) Log.i( MeetSpace.TAG, "Uncaught error: " + response );
+			String toastText = jsonObj.get("errors").getAsJsonArray() == null ? getString(R.string.twitter_follow_success) : responseError(jsonObj);
+			Toast.makeText(MeetSpace.getContext(), toastText, Toast.LENGTH_LONG).show();
         }
 		
-		private boolean successfulNotice(){
-            Toast.makeText(MeetSpace.getContext(), "Successfully following this person; hold down on their picture to see their profile", Toast.LENGTH_LONG).show();
-			return true;
-		}
-		
-		private boolean responseError(JsonObject jsonObj){
-			Log.i(MeetSpace.TAG, "unable to follow, error: " + jsonObj.getAsJsonArray( "error" ).getAsJsonObject().get("message").getAsString());
-//            Log.i( MeetSpace.TAG, "response id: " + jsonObj.get("id_str").getAsString() + " response name: " + jsonObj.get("screen_name") + "cameo URL: " +jsonObj.get("profile_image_url")  );
-			return true;
+		private String responseError(JsonObject jsonObj){
+			String errorMessage = "";
+			final JsonArray jsonArray = jsonObj.get( "errors" ).getAsJsonArray();
+			for( final JsonElement jsonElem : jsonArray ){
+				final JsonObject errorObj = jsonElem.getAsJsonObject();
+				errorMessage += "Error: " + errorObj.get( "message" ).getAsString() + " ";				
+			}
+			return errorMessage;
 		}
 	}
-    
-//	private void sendRequestDialog( ) {
-//		//something twitter instead
-//		String requestUri = "https://www.facebook.com/dialog/friends/?id=" +
-//			Id + "&app_id=" + getString( R.string.fb_app_id ) +
-//			"&redirect_uri=http://www.facebook.com";
-//		WebView webView = new WebView( this.getActivity( ) );
-//		webView.getSettings( ).setUserAgentString( getString( R.string.user_agent_string ) );
-//		webView.setWebViewClient( new WebViewClient( ){
-//				public boolean shouldOverrideUrlLoading( WebView view, String url ) {
-//					return false;
-//				}
-//			} );
-//		webView.loadUrl( requestUri );
-//		AlertDialog.Builder dialog = new AlertDialog.Builder( this.getActivity( ) );
-//		dialog.setView( webView );
-//		dialog.setPositiveButton( "Done", new DialogInterface.OnClickListener( ) {
-//
-//				public void onClick( DialogInterface dialog, int which ) {
-//
-//					dialog.dismiss( );
-//				}
-//			} );
-//		dialog.show( );
-//	}
 	
 	private class LoadPicture extends AsyncTask<String, Void, Bitmap> {
 		ImageView view;
