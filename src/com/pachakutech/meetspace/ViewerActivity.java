@@ -113,11 +113,11 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 		//	pager.setPageTransformer(true, new ZoomOutPageTransformer());
 		fbAdapter = new FacebookSlidePagerAdapter( getSupportFragmentManager( ) );
 		twAdapter = new TwitterSlidePagerAdapter( getSupportFragmentManager( ) );
-//		NfcAdapter nfc = NfcAdapter.getDefaultAdapter( this );
-//		if( nfc != null ) {
-//			nfc.setNdefPushMessageCallback( this, null );
-//			nfc.setOnNdefPushCompleteCallback( this, null );
-//		}
+		NfcAdapter nfc = NfcAdapter.getDefaultAdapter( this );
+		if( nfc != null ) {
+			nfc.setNdefPushMessageCallback( this, this );
+			nfc.setOnNdefPushCompleteCallback( this, this );
+		}
 		if( network == MeetSpace.FACEBOOK ) {
 			logoutButton.setBackground( res.getDrawable( R.drawable.button_fb_login ) );
 			loginOtherButton.setBackground( res.getDrawable( R.drawable.button_tw_login ) );
