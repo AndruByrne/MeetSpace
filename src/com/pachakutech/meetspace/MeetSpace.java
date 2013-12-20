@@ -6,6 +6,7 @@ import com.parse.Parse;
 import com.parse.ParseFacebookUtils;
 import android.content.*;
 import com.parse.*;
+import com.bugsense.trace.*;
 
 
 public class MeetSpace extends Application {
@@ -47,12 +48,18 @@ public class MeetSpace extends Application {
 
 		/// Set your Facebook App Id in strings.xml
 		ParseFacebookUtils.initialize(getString(R.string.fb_app_id));
-
+		BugSenseHandler.initAndStartSession(MeetSpace.this, "6878627a");
 		MeetSpace.context = getApplicationContext();
 		
 	}
 	public static Context getContext(){
 		return MeetSpace.context;
+	}
+
+	@Override
+	public void onTerminate( ) {
+		BugSenseHandler.closeSession(MeetSpace.this);
+		super.onTerminate( );
 	}
 
 }

@@ -23,6 +23,15 @@
 		android:measureWithLargestChild="true" >
 
 		<Button
+			android:id="@+id/loginOtherButton"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textStyle="bold"
+			android:text="@string/login"
+			android:textColor="#fff"
+        />
+
+		<Button
 			android:id="@+id/logoutButton"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
@@ -30,7 +39,17 @@
 			android:text="@string/logout"
 			android:textColor="#fff"
 			android:layout_gravity="center_horizontal"
-			android:background="@drawable/button_fb_login"
         />
+
+	    <TextView
+			android:id="@+id/statusBar"
+			android:layout_width="wrap_content"
+			android:layout_height="match_parent"
+			android:layout_toRightOf="@id/logoutButton"
+			android:textStyle="bold"
+			android:textSize="16dp"
+			android:textColor="#559999"
+		/>
+	
 	</LinearLayout>
 </LinearLayout>
