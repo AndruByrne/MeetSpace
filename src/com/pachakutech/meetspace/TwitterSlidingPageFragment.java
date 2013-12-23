@@ -65,11 +65,11 @@ public class TwitterSlidingPageFragment extends Fragment {
 					//same thing, but for twitter
 					try {
 						//try to open page in twitter native app.
-						String uri = "twitter://user?user_id=" + Id;    //Cutsom URL
+						String uri = getString(R.string.twitter_native_URI) + Id;    //Cutsom URL
 						startActivity( new Intent( Intent.ACTION_VIEW, Uri.parse( uri ) ) );   
 					} catch(ActivityNotFoundException ex) {
 						//twitter native app isn't available, use browser.
-						String uriWeb = "http://twitter.com/intent/user?user_id=" + Id;  //Normal URL  
+						String uriWeb = getString(R.string.twitter_browser_URI) + Id;  //Normal URL  
 						startActivity( new Intent( Intent.ACTION_VIEW, Uri.parse( uriWeb ) ) ); 
 					}
 					return true;
@@ -85,10 +85,11 @@ public class TwitterSlidingPageFragment extends Fragment {
 
             String response = "";
             final HttpClient client = new DefaultHttpClient( );
-            HttpPost verifyPost = new HttpPost(
-                "https://api.twitter.com/1.1/friendships/create.json?user_id="+Id+"&follow=true" );
-            ParseTwitterUtils.getTwitter( ).signRequest( verifyPost );
-            try { response = EntityUtils.toString( client.execute( verifyPost ).getEntity( ) );
+            HttpPost followPost = new HttpPost(
+                getString(R.string.follow_html)+
+				Id+getString(R.string.follow_true) );
+            ParseTwitterUtils.getTwitter( ).signRequest( followPost );
+            try { response = EntityUtils.toString( client.execute( followPost ).getEntity( ) );
             } catch(IOException e) {Log.e( MeetSpace.TAG, "Twitter error: " + e.toString( ) );}
             return response;
         }
@@ -96,14 +97,14 @@ public class TwitterSlidingPageFragment extends Fragment {
         @Override
         protected void onPostExecute( String response ) {
             final JsonObject jsonObj = (new JsonParser().parse(response)).getAsJsonObject();
-			Log.i(MeetSpace.TAG, "response: " + jsonObj.get( "errors" ).getAsJsonArray().toString());
-			String toastText = jsonObj.get("errors").getAsJsonArray() == null ? getString(R.string.twitter_follow_success) : responseError(jsonObj);
+		//	Log.i(MeetSpace.TAG, "response: " + jsonObj.get( "errors" ).getAsJsonArray().toString());
+			String toastText = jsonObj.get(getString(R.string.twitter_errors)).getAsJsonArray() == null ? getString(R.string.twitter_follow_success) : responseError(jsonObj);
 			Toast.makeText(MeetSpace.getContext(), toastText, Toast.LENGTH_LONG).show();
         }
 		
 		private String responseError(JsonObject jsonObj){
 			String errorMessage = "";
-			final JsonArray jsonArray = jsonObj.get( "errors" ).getAsJsonArray();
+			final JsonArray jsonArray = jsonObj.get( getString(R.string.twitter_errors) ).getAsJsonArray();
 			for( final JsonElement jsonElem : jsonArray ){
 				final JsonObject errorObj = jsonElem.getAsJsonObject();
 				errorMessage += "Error: " + errorObj.get( "message" ).getAsString() + " ";				

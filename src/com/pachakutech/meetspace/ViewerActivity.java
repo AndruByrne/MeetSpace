@@ -88,7 +88,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 		setContentView( R.layout.userdetails );
 
 
-        setNetwork( getIntent( ).getExtras( ).getInt( "network" ) );
+        setNetwork( getIntent( ).getExtras( ).getInt( getString(R.string.network_literal) ) );
 
 		pager = (ViewPager) findViewById( R.id.pager );
 		pager.setId( 0x7F04FAF0 );
@@ -172,7 +172,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	public void onStop( ) {
 		if( thisRoom != null && loggingOut == false ) {
 //			ParseRelation population = thisRoom.getRelation( "population" );
-			thisRoom.getRelation( "population" ).remove( ParseUser.getCurrentUser( ) );
+			thisRoom.getRelation( getString(R.string.population_literal) ).remove( ParseUser.getCurrentUser( ) );
 			thisRoom.saveInBackground( );
 		}
 		if( locationClient.isConnected( ) ) {stopPeriodicUpdates( );
@@ -189,10 +189,10 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 					if( user != null ) {
 						String id = user.getId( );
 						ParseUser currentUser = ParseUser.getCurrentUser( );
-						currentUser.put( network_name + "Id", id );
-						currentUser.put( "name", user.getName( ) );
+						currentUser.put( network_name + getString(R.string.Id_literal), id );
+						currentUser.put( getString(R.string.name_literal), user.getName( ) );
 						currentUser.saveInBackground( );
-						ndefRecord = NdefRecord.createUri( "http://facebook.com/profile.php?id=" + id );
+						ndefRecord = NdefRecord.createUri( getString(R.string.facebook_ndef) + id );
 						Log.i( MeetSpace.TAG, "NdefTag" + ndefRecord.toString( ) );
 //						NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter( MeetSpace.getContext( ) );
 //						if( nfcAdapter != null ) {
@@ -223,7 +223,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 			String response = "";
 			final HttpClient client = new DefaultHttpClient( );
 			HttpGet verifyGet = new HttpGet(
-				"https://api.twitter.com/1.1/account/verify_credentials.json?include_user_entities=false&include_entities=false&skip_status=true" );
+				getString(R.string.verify_html) );
 			ParseTwitterUtils.getTwitter( ).signRequest( verifyGet );
 			try { response = EntityUtils.toString( client.execute( verifyGet ).getEntity( ) );
 			} catch(IOException e) {Log.e( MeetSpace.TAG, "Twitter error: " + e.toString( ) );}
@@ -233,13 +233,13 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
         @Override
         protected void onPostExecute( String response ) {
 			final JsonObject jsonObj = ( new JsonParser( ).parse( response ) ).getAsJsonObject( );
-			String id = jsonObj.get( "id_str" ).getAsString( );
+			String id = jsonObj.get( getString(R.string.id_str_literal) ).getAsString( );
 			ParseUser currentUser = ParseUser.getCurrentUser( );
-			currentUser.put( network_name + "Id", id );
-			currentUser.put( "name", jsonObj.get( "screen_name" ).getAsString( ) );
-			currentUser.put( "cameoURL", jsonObj.get( "profile_image_url" ).getAsString( ).replace( "_normal", "" ) );
+			currentUser.put( network_name + getString(R.string.Id_literal), id );
+			currentUser.put( getString(R.string.name_literal), jsonObj.get( getString(R.string.screen_name) ).getAsString( ) );
+			currentUser.put( getString(R.string.cameo_URL), jsonObj.get( getString(R.string.profile_image_url) ).getAsString( ).replace( "_normal", "" ) );
 			currentUser.saveInBackground( );
-			ndefRecord = NdefRecord.createUri( "https://api.twitter.com/1.1/friendships/create.json?user_id=" + id + "&follow=true" );
+			ndefRecord = NdefRecord.createUri( getString(R.string.twitter_ndef) + id );
 //			NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter( MeetSpace.getContext( ) );
 //			if( nfcAdapter != null ) {
 //				nfcAdapter.setOnNdefPushCompleteCallback( new NfcAdapter.OnNdefPushCompleteCallback( ){
@@ -253,7 +253,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 
 	@Override
 	public void onNdefPushComplete( NfcEvent nfcEvent ) {
-		Toast.makeText( MeetSpace.getContext( ), "sent profile information through NFC", Toast.LENGTH_SHORT ).show( );
+		Toast.makeText( MeetSpace.getContext( ), getString(R.string.nfc_affirm), Toast.LENGTH_SHORT ).show( );
 	}
 
 	@Override
@@ -264,8 +264,8 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
     //**********Room Checking, Creating, and Adding self******//
 	private void lookForARoom( ) {
 //		ParseQuery roomQuery = ParseQuery.getQuery( "Room" );
-		ParseQuery.getQuery( "Room" ).whereWithinKilometers( "location", userGeoPoint, MeetSpace.SEARCH_RADIUS[currentRadius] )
-			.whereEqualTo( "network", network_name )
+		ParseQuery.getQuery( getString(R.string.Room_literal) ).whereWithinKilometers( getString(R.string.location_literal), userGeoPoint, MeetSpace.SEARCH_RADIUS[currentRadius] )
+			.whereEqualTo( getString(R.string.network_literal), network_name )
 			.countInBackground( new CountCallback( ){
 				public void done( int count, ParseException e ) {
 					if( e == null ) {
@@ -311,12 +311,12 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 
 	private void makeNewRoom( ) {
 		if( ParseUser.getCurrentUser( ) != null ) {
-			thisRoom = new ParseObject( "Room" );
-			thisRoom.put( "network", network_name );
-			thisRoom.put( "location", userGeoPoint );
-			thisRoom.put( "title", getRoomTitle( ) );
+			thisRoom = new ParseObject( getString(R.string.Room_literal) );
+			thisRoom.put( getString(R.string.network_literal), network_name );
+			thisRoom.put( getString(R.string.location_literal), userGeoPoint );
+			thisRoom.put( getString(R.string.title_literal), getRoomTitle( ) );
 //			ParseRelation population = thisRoom.getRelation( "population" );
-			thisRoom.getRelation( "population" ).add( ParseUser.getCurrentUser( ) );
+			thisRoom.getRelation( getString(R.string.population_literal) ).add( ParseUser.getCurrentUser( ) );
 			thisRoom.saveInBackground( new SaveCallback( ){
 					public void done( ParseException e ) {
 						if( e == null ) {
@@ -332,20 +332,20 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	private void joinRoom( ) {
 		Log.i( MeetSpace.TAG, "joining room at radius " + currentRadius );
 //		ParseQuery roomQuery = ParseQuery.getQuery( "Room" );
-		ParseQuery.getQuery( "Room" )
-		    .whereWithinKilometers( "location", userGeoPoint, MeetSpace.SEARCH_RADIUS[currentRadius] )
-			.whereEqualTo( "network", network_name )
+		ParseQuery.getQuery( getString(R.string.Room_literal) )
+		    .whereWithinKilometers( getString(R.string.location_literal), userGeoPoint, MeetSpace.SEARCH_RADIUS[currentRadius] )
+			.whereEqualTo( getString(R.string.network_literal), network_name )
 			.getFirstInBackground( new GetCallback<ParseObject>( ) {
 				public void done( ParseObject room, ParseException e ) {
 					// comments now contains the comments for posts without images.
 					if( e == null ) {
 						if( thisRoom != null ) {
 //							ParseRelation population = thisRoom.getRelation( "population" );
-							thisRoom.getRelation( "population" ).remove( ParseUser.getCurrentUser( ) );
+							thisRoom.getRelation( getString(R.string.population_literal) ).remove( ParseUser.getCurrentUser( ) );
 						}
 						thisRoom = room;
 //						ParseRelation population = thisRoom.getRelation( "population" );
-						thisRoom.getRelation( "population" ).add( ParseUser.getCurrentUser( ) );
+						thisRoom.getRelation( getString(R.string.population_literal) ).add( ParseUser.getCurrentUser( ) );
 						thisRoom.saveInBackground( new SaveCallback( ){
 								public void done( ParseException e ) {
 									if( e == null ) {
@@ -363,9 +363,9 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 //		ParseRelation<ParseObject> relation = thisRoom.getRelation( "population" );
 //		ParseQuery query = relation.getQuery( );
 //		query.whereNotEqualTo( network_name + "Id", ParseUser.getCurrentUser( ).get( network_name + "Id" ) );
-		thisRoom.getRelation( "population" )
+		thisRoom.getRelation( getString(R.string.population_literal) )
 			.getQuery( )
-			.whereNotEqualTo( network_name + "Id", ParseUser.getCurrentUser( ).get( network_name + "Id" ) )
+			.whereNotEqualTo( network_name + getString(R.string.Id_literal), ParseUser.getCurrentUser( ).get( network_name + getString(R.string.Id_literal) ) )
 			.findInBackground( new FindCallback<ParseObject>( ){
 			    public void done( List<ParseObject> population, ParseException e ) {
 					if( e == null ) {
@@ -388,9 +388,9 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	private void setNetwork( int network ) {
 		if( network == MeetSpace.FACEBOOK ) {
 			this.network = MeetSpace.FACEBOOK;
-			this.network_name = "facebook";
+			this.network_name = getString(R.string.facebook_literal);
 		} else if( network == MeetSpace.TWITTER ) {
-			this.network_name = "twitter";
+			this.network_name = getString(R.string.twitter_literal);
 			this.network = MeetSpace.TWITTER;
 		}
 	}
@@ -414,7 +414,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	private void onLogoutButtonClicked( ) {
 		loggingOut = true;
 		if( thisRoom != null ) {
-			ParseRelation population = thisRoom.getRelation( "population" );
+			ParseRelation population = thisRoom.getRelation( getString(R.string.population_literal) );
 			population.remove( ParseUser.getCurrentUser( ) );
 			thisRoom.saveInBackground( );
 		}
@@ -433,7 +433,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	private void facebookLoginButtonClicked( ) {
 		loggingOut = true;
 		if( thisRoom != null ) {
-			ParseRelation population = thisRoom.getRelation( "population" );
+			ParseRelation population = thisRoom.getRelation( getString(R.string.population_literal) );
 			population.remove( ParseUser.getCurrentUser( ) );
 			thisRoom.saveInBackground( );
 		}
@@ -464,7 +464,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	private void twitterLoginButtonClicked( ) {
 		loggingOut = true;
 		if( thisRoom != null ) {
-			ParseRelation population = thisRoom.getRelation( "population" );
+			ParseRelation population = thisRoom.getRelation( getString(R.string.population_literal) );
 			population.remove( ParseUser.getCurrentUser( ) );
 			thisRoom.saveInBackground( );
 		}
@@ -499,7 +499,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 
 	private void showUserDetailsActivity( int network ) {
 		Bundle bundle = new Bundle();
-		bundle.putInt("network", network);
+		bundle.putInt(getString(R.string.network_literal), network);
 		Intent intent = new Intent( this, ViewerActivity.class );
 		intent.putExtras(bundle);
 		startActivity( intent );
@@ -656,9 +656,9 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
         @Override
         public Fragment getItem( int position ) {
             TwitterSlidingPageFragment fragment = new TwitterSlidingPageFragment( );
-			fragment.setId( roomPopulation[position].getString( network_name + "Id" ) );
-			fragment.setName( roomPopulation[position].getString( "name" ) );
-			fragment.setCameoURL( roomPopulation[position].getString( "cameoURL" ) );
+			fragment.setId( roomPopulation[position].getString( network_name + getString(R.string.Id_literal) ) );
+			fragment.setName( roomPopulation[position].getString( getString(R.string.name_literal) ) );
+			fragment.setCameoURL( roomPopulation[position].getString( getString(R.string.cameo_URL) ) );
 			return fragment;
         }
 

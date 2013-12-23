@@ -46,11 +46,11 @@ public class FacebookSlidingPageFragment extends Fragment {
 				public boolean onLongClick( View v ) {
 						try {
 							//try to open page in facebook native app.
-							String uri = "fb://page/" + Id;    //Cutsom URL
+							String uri = getString(R.string.facebook_native_URI) + Id;    //Cutsom URL
 							startActivity( new Intent( Intent.ACTION_VIEW, Uri.parse( uri ) ) );   
 						} catch(ActivityNotFoundException ex) {
 							//facebook native app isn't available, use browser.
-							String uriWeb = "http://facebook.com/profile.php?id=" + Id;  //Normal URL  
+							String uriWeb = getString(R.string.facebook_browser_URI) + Id;  //Normal URL  
 							startActivity( new Intent( Intent.ACTION_VIEW, Uri.parse( uriWeb ) ) ); 
 						}
 					return true;
@@ -59,10 +59,11 @@ public class FacebookSlidingPageFragment extends Fragment {
 		return view;		
 	}
 	private void sendRequestDialog( ) {
-		String requestUri = "https://www.facebook.com/dialog/friends/?id=" +
-			Id + "&app_id=" + getString( R.string.fb_app_id ) +
-			"&redirect_uri=http://www.facebook.com";
+		String requestUri = getString(R.string.facebook_friend_html) +
+			Id + getString(R.string.app_id_extension) + getString( R.string.fb_app_id ) +
+			getString(R.string.fb_html_redirect_url);
 		WebView webView = new WebView( this.getActivity( ) );
+		webView.getSettings().setJavaScriptEnabled( true );
 		webView.getSettings( ).setUserAgentString( getString( R.string.user_agent_string ) );
 		webView.setWebViewClient( new WebViewClient( ){
 				public boolean shouldOverrideUrlLoading( WebView view, String url ) {

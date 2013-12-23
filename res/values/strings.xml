@@ -20,5 +20,31 @@
 	<string name="too_large_prompt"> meters away, would you like to create your own room?</string> 
     <string name="twitter_follow_success">Successfully following this person; hold down on their picture to see their profile</string>
 	<string name="noone_home">No one running MeetSpace nearby, NFC disabled</string>
-	
+	<string name="twitter_ndef">https://twitter.com/intent/user?user_id=</string>
+    <string name="screen_name">screen_name</string>
+	<string name="profile_image_url">profile_image_url</string>
+	<string name="name_literal">name</string>
+	<string name="cameo_URL">cameoURL</string>
+	<string name="id_str_literal">id_str</string>
+	<string name="follow_html">https://api.twitter.com/1.1/friendships/create.json?user_id=</string>
+	<string name="follow_true">&amp;follow=true</string>
+	<string name="twitter_native_URI">twitter://user?user_id=</string>
+	<string name="twitter_browser_URI">http://twitter.com/intent/user?user_id=</string>
+	<string name="verify_html">https://api.twitter.com/1.1/account/verify_credentials.json?include_user_entities=false&amp;include_entities=false&amp;skip_status=true</string>
+	<string name="facebook_ndef">http://facebook.com/profile.php?id=</string>
+	<string name="facebook_native_URI">fb://page/</string>
+	<string name="facebook_browser_URI">http://facebook.com/profile.php?id=</string>
+	<string name="facebook_friend_html">https://www.facebook.com/dialog/friends/?id=</string>
+	<string name="app_id_extension">&amp;app_id=</string>
+	<string name="fb_html_redirect_url">&amp;redirect_uri=http://www.facebook.com</string>
+	<string name="Id_literal">Id</string>
+	<string name="population_literal">population</string>
+	<string name="Room_literal">Room</string>
+	<string name="network_literal">network</string>
+	<string name="location_literal">location</string>
+	<string name="title_literal">title</string>
+	<string name="facebook_literal">facebook</string>
+	<string name="twitter_literal">twitter</string>
+	<string name="twitter_errors">errors</string>
+	<string name="nfc_affirm">sent profile information through NFC</string>
 </resources>
