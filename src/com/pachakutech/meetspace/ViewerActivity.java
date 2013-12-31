@@ -60,16 +60,22 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	private LocationClient locationClient;
 	private Location lastLocation = null;
 	private Location currentLocation = null;
+	// For the progress wheel
 	private Dialog progressDialog;
+	// For the pager view of Fragments
+	private ViewPager pager;
+	//BUTTONS!!!!
 	private Button logoutButton;
 	private Button loginOtherButton;
-	private TextView statusBar;
+	//not exactly a button, about to be iced
+//	private TextView statusBar;
+	//NFC Status bar
+	private VerticalLabelView nfcStatusBar;
 	private boolean hasSetUpInitialLocation;
 	private ParseGeoPoint userGeoPoint;
 	private int currentRadius = 3;
 	private boolean checkedAbove;
 	private int NUM_MUGS;
-	private ViewPager pager;
 	private ParseObject thisRoom = null;
 	private ParseUser[] roomPopulation;
     private ViewerActivity.FacebookSlidePagerAdapter fbAdapter;
@@ -85,15 +91,20 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	protected void onCreate( Bundle savedInstanceState ) {
 		super.onCreate( savedInstanceState );
 
-		setContentView( R.layout.userdetails );
+		setContentView( R.layout.viewer );
 
 
         setNetwork( getIntent( ).getExtras( ).getInt( getString(R.string.network_literal) ) );
 
 		pager = (ViewPager) findViewById( R.id.pager );
 		pager.setId( 0x7F04FAF0 );
+		
+		nfcStatusBar = (VerticalLabelView) findViewById( R.id.nfcStatusBar );
+		nfcStatusBar.setText("Test");
+		nfcStatusBar.setTextSize(64);
+		nfcStatusBar.setTextColor(111111);
 
-		statusBar = (TextView) findViewById(R.id.statusBar);
+	//	statusBar = (TextView) findViewById(R.id.statusBar);
 		Resources res = getResources( );
 		loginOtherButton = (Button) findViewById( R.id.loginOtherButton );
 		loginOtherButton.setOnClickListener( new View.OnClickListener(){
@@ -151,6 +162,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 		locationClient = new LocationClient( this, this, this );
 		locationClient.connect( );
 
+		
 		ParseUser currentUser = ParseUser.getCurrentUser( );
 		if( currentUser != null ) updateViewsWithSelfProfileInfo( );
 		else startLoginActivity( );
@@ -371,7 +383,11 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 					if( e == null ) {
 						roomPopulation = population.toArray( new ParseUser[population.size( )] );
 						NUM_MUGS = roomPopulation.length;
-						statusBar.setText( NUM_MUGS==0 ? getString(R.string.noone_home) : "" );
+						
+						
+						/**************Need to create a replacement for this bar function, like a Toast at least, maybe a view inflation?*******/
+						
+//						statusBar.setText( NUM_MUGS==0 ? getString(R.string.noone_home) : "" );
 //						Log.i(MeetSpace.TAG, "Setting number of mugs@ " + NUM_MUGS);
 						fbAdapter.notifyDataSetChanged( );
 						twAdapter.notifyDataSetChanged( );
