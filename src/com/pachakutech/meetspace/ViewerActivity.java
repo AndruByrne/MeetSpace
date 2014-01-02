@@ -123,9 +123,10 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 		twAdapter = new TwitterSlidePagerAdapter( getSupportFragmentManager( ) );
 
 		roomStatusBar = (VerticalAutoFitTextView) findViewById( R.id.roomStatusBar );
-		roomStatusBar.setPadding( 128, 0, 128, 32 );
-		roomStatusBar.setText("");
-
+		roomStatusBar.setPadding( 64, 0, 64, 64 );
+		roomStatusBar.setText( getString( R.string.is_there_a_home ) );
+		roomStatusBar.setBackgroundColor( res.getColor( R.color.green ) );
+		
 		nfcStatusBar = (VerticalAutoFitTextView) findViewById( R.id.nfcStatusBar );
 		nfcStatusBar.setPadding( 128, 0, 128, 32 );		
 		NfcAdapter nfc = NfcAdapter.getDefaultAdapter( this );
@@ -336,6 +337,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 
 	private void joinRoom( ) {
 		Log.i( MeetSpace.TAG, "joining room at radius " + currentRadius );
+		roomStatusBar.setText( getString( R.string.schrodinger_home ) ) ;
 //		ParseQuery roomQuery = ParseQuery.getQuery( "Room" );
 		ParseQuery.getQuery( getString( R.string.Room_literal ) )
 		    .whereWithinKilometers( getString( R.string.location_literal ), userGeoPoint, MeetSpace.SEARCH_RADIUS[currentRadius] )
@@ -374,9 +376,10 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 						roomPopulation = population.toArray( new ParseUser[population.size( )] );
 						NUM_MUGS = roomPopulation.length;
 
-
+//						roomStatusBar = (VerticalAutoFitTextView) findViewById( R.id.roomStatusBar );
+//						roomStatusBar.setPadding( 64, 0, 64, 64 );
 						/**************Need to create a replacement for this bar function, like a Toast at least, maybe a view inflation?*******/
-						roomStatusBar.setText( NUM_MUGS == 0 ? getString( R.string.noone_home ) : getString( R.string.one_home ) );
+						roomStatusBar.setText( NUM_MUGS == 0 ? getString( R.string.noone_home ) : getString( R.string.one_home ) );				
 						roomStatusBar.setBackgroundColor( NUM_MUGS == 0 ? getResources().getColor( R.color.orange ) : getResources().getColor( R.color.blue ));
 //						Log.i(MeetSpace.TAG, "Setting number of mugs@ " + NUM_MUGS);
 						fbAdapter.notifyDataSetChanged( );

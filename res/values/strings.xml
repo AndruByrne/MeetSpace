@@ -50,5 +50,7 @@
 	<string name="nfc_status_off">No NFC Radio Found</string>
 	<string name="noone_home">No Other Broadcasts</string>
 	<string name="one_home">People Broadcasting</string>
+	<string name="schrodinger_home">Loading Population</string>
+	<string name="is_there_a_home">Searching For Groups</string>
 	
 </resources>
