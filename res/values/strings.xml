@@ -19,7 +19,6 @@
 	<string name="room_found">A posse was found </string>
 	<string name="too_large_prompt"> meters away, would you like to create your own room?</string> 
     <string name="twitter_follow_success">Successfully following this person; hold down on their picture to see their profile</string>
-	<string name="noone_home">No one running MeetSpace nearby, NFC disabled</string>
 	<string name="twitter_ndef">https://twitter.com/intent/user?user_id=</string>
     <string name="screen_name">screen_name</string>
 	<string name="profile_image_url">profile_image_url</string>
@@ -47,4 +46,9 @@
 	<string name="twitter_literal">twitter</string>
 	<string name="twitter_errors">errors</string>
 	<string name="nfc_affirm">sent profile information through NFC</string>
+	<string name="nfc_status_on">NFC Pointer Ready</string>
+	<string name="nfc_status_off">No NFC Radio Found</string>
+	<string name="noone_home">No Other Broadcasts</string>
+	<string name="one_home">People Broadcasting</string>
+	
 </resources>

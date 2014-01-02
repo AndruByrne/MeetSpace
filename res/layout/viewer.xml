@@ -1,62 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout 
+<FrameLayout 
 	xmlns:facebook="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal" 
 	android:background="@drawable/photo1_small">
-	<com.pachakutech.meetspace.VerticalLabelView
-		android:id="@+id/nfcStatusBar"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:orientation="vertical"
-		android:background="@color/blue"
-		android:textStyle="bold"
-		android:textSize="64dp"
-		android:textColor="@color/black"
-		android:layout_weight="1"
-	/>
 	<LinearLayout	
-		android:layout_width="0dp"
+		android:layout_width="match_parent"
 		android:layout_height="match_parent"
 		android:orientation="vertical"
-		android:layout_weight="6"> 
+		android:clickable="true"
+		> 
+
+		<android.support.v4.view.ViewPager
+			android:id="@+id/pager"
+			android:layout_width="match_parent"
+			android:layout_height="0px"
+			android:layout_weight="1" >
+		</android.support.v4.view.ViewPager>
+
+		<LinearLayout
+			android:layout_height="wrap_content"
+			android:layout_width="match_parent"
+			android:orientation="horizontal"
+			android:layout_weight="0"
+			android:gravity="center" 
+			android:measureWithLargestChild="true" >
+
+			<Button
+				android:id="@+id/loginOtherButton"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:textStyle="bold"
+				android:text="@string/login"
+				android:textColor="#fff"
+			/>
+
+			<Button
+				android:id="@+id/logoutButton"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:textStyle="bold"
+				android:text="@string/logout"
+				android:textColor="#fff"
+				android:layout_gravity="center_horizontal"
+			/>
+
+		</LinearLayout>
+	</LinearLayout>
+	<com.pachakutech.meetspace.VerticalAutoFitTextView
+		android:id="@+id/nfcStatusBar"
+		android:clickable="false"
+		android:layout_width="wrap_content"
+		android:layout_height="fill_parent"
+		android:orientation="vertical"
+		android:alpha="0.4"
+		android:textStyle="bold"
+		android:textColor="@color/black" />
+	<com.pachakutech.meetspace.VerticalAutoFitTextView
+		android:id="@+id/roomStatusBar"
+		android:clickable="false"
+		android:layout_width="wrap_content"
+		android:layout_height="fill_parent"
+		android:layout_gravity="right"
+		android:orientation="vertical"
+		android:alpha="0.4"
+		android:textStyle="bold"
+		android:textColor="@color/black" />
 	
-    <android.support.v4.view.ViewPager
-		android:id="@+id/pager"
-		android:layout_width="match_parent"
-		android:layout_height="0px"
-		android:layout_weight="1" >
-	</android.support.v4.view.ViewPager>
-
-	<LinearLayout
-		android:layout_height="wrap_content"
-		android:layout_width="match_parent"
-		android:orientation="horizontal"
-		android:layout_weight="0"
-		android:gravity="center" 
-		android:measureWithLargestChild="true" >
-
-		<Button
-			android:id="@+id/loginOtherButton"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:textStyle="bold"
-			android:text="@string/login"
-			android:textColor="#fff"
-        />
-
-		<Button
-			android:id="@+id/logoutButton"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:textStyle="bold"
-			android:text="@string/logout"
-			android:textColor="#fff"
-			android:layout_gravity="center_horizontal"
-        />
-
-	</LinearLayout>
-	</LinearLayout>
-</LinearLayout>
+	
+</FrameLayout>

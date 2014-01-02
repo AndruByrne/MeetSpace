@@ -70,7 +70,9 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	//not exactly a button, about to be iced
 //	private TextView statusBar;
 	//NFC Status bar
-	private VerticalLabelView nfcStatusBar;
+//	private VerticalLabelView nfcStatusBar;
+	private VerticalAutoFitTextView roomStatusBar;
+	private VerticalAutoFitTextView nfcStatusBar;
 	private boolean hasSetUpInitialLocation;
 	private ParseGeoPoint userGeoPoint;
 	private int currentRadius = 3;
@@ -94,27 +96,22 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 		setContentView( R.layout.viewer );
 
 
-        setNetwork( getIntent( ).getExtras( ).getInt( getString(R.string.network_literal) ) );
+        setNetwork( getIntent( ).getExtras( ).getInt( getString( R.string.network_literal ) ) );
 
 		pager = (ViewPager) findViewById( R.id.pager );
 		pager.setId( 0x7F04FAF0 );
-		
-		nfcStatusBar = (VerticalLabelView) findViewById( R.id.nfcStatusBar );
-		nfcStatusBar.setText("Test");
-		nfcStatusBar.setTextSize(64);
-		nfcStatusBar.setTextColor(111111);
 
-	//	statusBar = (TextView) findViewById(R.id.statusBar);
+		//	statusBar = (TextView) findViewById(R.id.statusBar);
 		Resources res = getResources( );
 		loginOtherButton = (Button) findViewById( R.id.loginOtherButton );
-		loginOtherButton.setOnClickListener( new View.OnClickListener(){
-			@Override
-			public void onClick( View v ){
-				if( network == MeetSpace.FACEBOOK ) 
-					twitterLoginButtonClicked();
-				else facebookLoginButtonClicked();
-			}
-		});
+		loginOtherButton.setOnClickListener( new View.OnClickListener( ){
+				@Override
+				public void onClick( View v ) {
+					if( network == MeetSpace.FACEBOOK ) 
+						twitterLoginButtonClicked( );
+					else facebookLoginButtonClicked( );
+				}
+			} );
 		logoutButton = (Button) findViewById( R.id.logoutButton );
 		logoutButton.setOnClickListener( new View.OnClickListener( ) {
 				@Override
@@ -124,11 +121,24 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 		//	pager.setPageTransformer(true, new ZoomOutPageTransformer());
 		fbAdapter = new FacebookSlidePagerAdapter( getSupportFragmentManager( ) );
 		twAdapter = new TwitterSlidePagerAdapter( getSupportFragmentManager( ) );
+
+		roomStatusBar = (VerticalAutoFitTextView) findViewById( R.id.roomStatusBar );
+		roomStatusBar.setPadding( 128, 0, 128, 32 );
+		roomStatusBar.setText("");
+
+		nfcStatusBar = (VerticalAutoFitTextView) findViewById( R.id.nfcStatusBar );
+		nfcStatusBar.setPadding( 128, 0, 128, 32 );		
 		NfcAdapter nfc = NfcAdapter.getDefaultAdapter( this );
 		if( nfc != null ) {
 			nfc.setNdefPushMessageCallback( this, this );
 			nfc.setOnNdefPushCompleteCallback( this, this );
+			nfcStatusBar.setText( getString( R.string.nfc_status_on ) );
+			nfcStatusBar.setBackgroundColor( res.getColor( R.color.blue ) );			
+		} else {
+			nfcStatusBar.setText( getString( R.string.nfc_status_off ) );
+			nfcStatusBar.setBackgroundColor( res.getColor( R.color.red ) );						
 		}
+
 		if( network == MeetSpace.FACEBOOK ) {
 			logoutButton.setBackground( res.getDrawable( R.drawable.button_fb_login ) );
 			loginOtherButton.setBackground( res.getDrawable( R.drawable.button_tw_login ) );
@@ -138,7 +148,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 			if( session != null && session.isOpened( ) ) {
 				getFbId( );
 //			makeFriendsRequest( );
-			} else Log.e( MeetSpace.TAG, "no request made" );
+			} else Log.e( MeetSpace.TAG, "null session" );
 		} else if( network == MeetSpace.TWITTER ) {
 			logoutButton.setBackground( res.getDrawable( R.drawable.button_tw_login ) );
 			loginOtherButton.setBackground( res.getDrawable( R.drawable.button_fb_login ) );
@@ -162,7 +172,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 		locationClient = new LocationClient( this, this, this );
 		locationClient.connect( );
 
-		
+
 		ParseUser currentUser = ParseUser.getCurrentUser( );
 		if( currentUser != null ) updateViewsWithSelfProfileInfo( );
 		else startLoginActivity( );
@@ -184,7 +194,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	public void onStop( ) {
 		if( thisRoom != null && loggingOut == false ) {
 //			ParseRelation population = thisRoom.getRelation( "population" );
-			thisRoom.getRelation( getString(R.string.population_literal) ).remove( ParseUser.getCurrentUser( ) );
+			thisRoom.getRelation( getString( R.string.population_literal ) ).remove( ParseUser.getCurrentUser( ) );
 			thisRoom.saveInBackground( );
 		}
 		if( locationClient.isConnected( ) ) {stopPeriodicUpdates( );
@@ -201,20 +211,11 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 					if( user != null ) {
 						String id = user.getId( );
 						ParseUser currentUser = ParseUser.getCurrentUser( );
-						currentUser.put( network_name + getString(R.string.Id_literal), id );
-						currentUser.put( getString(R.string.name_literal), user.getName( ) );
+						currentUser.put( network_name + getString( R.string.Id_literal ), id );
+						currentUser.put( getString( R.string.name_literal ), user.getName( ) );
 						currentUser.saveInBackground( );
-						ndefRecord = NdefRecord.createUri( getString(R.string.facebook_ndef) + id );
+						ndefRecord = NdefRecord.createUri( getString( R.string.facebook_ndef ) + id );
 						Log.i( MeetSpace.TAG, "NdefTag" + ndefRecord.toString( ) );
-//						NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter( MeetSpace.getContext( ) );
-//						if( nfcAdapter != null ) {
-//							nfcAdapter.setOnNdefPushCompleteCallback( new NfcAdapter.OnNdefPushCompleteCallback( ){
-//									public void onNdefPushComplete( NfcEvent nfcEvent ) {
-//										Toast.makeText( MeetSpace.getContext( ), "sent profile information through NFC", Toast.LENGTH_SHORT ).show( );
-//									}
-//								}, null );
-//							nfcAdapter.setNdefPushMessage( new NdefMessage( ndefRecord ), null );
-//						}
 					} else if( response.getError( ) != null ) {
 						if( ( response.getError( ).getCategory( ) == FacebookRequestError.Category.AUTHENTICATION_RETRY )
                            || ( response.getError( ).getCategory( ) == FacebookRequestError.Category.AUTHENTICATION_REOPEN_SESSION ) ) {
@@ -235,7 +236,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 			String response = "";
 			final HttpClient client = new DefaultHttpClient( );
 			HttpGet verifyGet = new HttpGet(
-				getString(R.string.verify_html) );
+				getString( R.string.verify_html ) );
 			ParseTwitterUtils.getTwitter( ).signRequest( verifyGet );
 			try { response = EntityUtils.toString( client.execute( verifyGet ).getEntity( ) );
 			} catch(IOException e) {Log.e( MeetSpace.TAG, "Twitter error: " + e.toString( ) );}
@@ -245,27 +246,19 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
         @Override
         protected void onPostExecute( String response ) {
 			final JsonObject jsonObj = ( new JsonParser( ).parse( response ) ).getAsJsonObject( );
-			String id = jsonObj.get( getString(R.string.id_str_literal) ).getAsString( );
+			String id = jsonObj.get( getString( R.string.id_str_literal ) ).getAsString( );
 			ParseUser currentUser = ParseUser.getCurrentUser( );
-			currentUser.put( network_name + getString(R.string.Id_literal), id );
-			currentUser.put( getString(R.string.name_literal), jsonObj.get( getString(R.string.screen_name) ).getAsString( ) );
-			currentUser.put( getString(R.string.cameo_URL), jsonObj.get( getString(R.string.profile_image_url) ).getAsString( ).replace( "_normal", "" ) );
+			currentUser.put( network_name + getString( R.string.Id_literal ), id );
+			currentUser.put( getString( R.string.name_literal ), jsonObj.get( getString( R.string.screen_name ) ).getAsString( ) );
+			currentUser.put( getString( R.string.cameo_URL ), jsonObj.get( getString( R.string.profile_image_url ) ).getAsString( ).replace( "_normal", "" ) );
 			currentUser.saveInBackground( );
-			ndefRecord = NdefRecord.createUri( getString(R.string.twitter_ndef) + id );
-//			NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter( MeetSpace.getContext( ) );
-//			if( nfcAdapter != null ) {
-//				nfcAdapter.setOnNdefPushCompleteCallback( new NfcAdapter.OnNdefPushCompleteCallback( ){
-//						public void onNdefPushComplete( NfcEvent nfcEvent ) {
-//						}
-//					}, null );
-//				nfcAdapter.setNdefPushMessage( new NdefMessage( ndefRecord ), null );
-//			}
+			ndefRecord = NdefRecord.createUri( getString( R.string.twitter_ndef ) + id );
 		}
 	}
 
 	@Override
 	public void onNdefPushComplete( NfcEvent nfcEvent ) {
-		Toast.makeText( MeetSpace.getContext( ), getString(R.string.nfc_affirm), Toast.LENGTH_SHORT ).show( );
+		Toast.makeText( MeetSpace.getContext( ), getString( R.string.nfc_affirm ), Toast.LENGTH_SHORT ).show( );
 	}
 
 	@Override
@@ -276,8 +269,8 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
     //**********Room Checking, Creating, and Adding self******//
 	private void lookForARoom( ) {
 //		ParseQuery roomQuery = ParseQuery.getQuery( "Room" );
-		ParseQuery.getQuery( getString(R.string.Room_literal) ).whereWithinKilometers( getString(R.string.location_literal), userGeoPoint, MeetSpace.SEARCH_RADIUS[currentRadius] )
-			.whereEqualTo( getString(R.string.network_literal), network_name )
+		ParseQuery.getQuery( getString( R.string.Room_literal ) ).whereWithinKilometers( getString( R.string.location_literal ), userGeoPoint, MeetSpace.SEARCH_RADIUS[currentRadius] )
+			.whereEqualTo( getString( R.string.network_literal ), network_name )
 			.countInBackground( new CountCallback( ){
 				public void done( int count, ParseException e ) {
 					if( e == null ) {
@@ -323,12 +316,12 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 
 	private void makeNewRoom( ) {
 		if( ParseUser.getCurrentUser( ) != null ) {
-			thisRoom = new ParseObject( getString(R.string.Room_literal) );
-			thisRoom.put( getString(R.string.network_literal), network_name );
-			thisRoom.put( getString(R.string.location_literal), userGeoPoint );
-			thisRoom.put( getString(R.string.title_literal), getRoomTitle( ) );
+			thisRoom = new ParseObject( getString( R.string.Room_literal ) );
+			thisRoom.put( getString( R.string.network_literal ), network_name );
+			thisRoom.put( getString( R.string.location_literal ), userGeoPoint );
+			thisRoom.put( getString( R.string.title_literal ), getRoomTitle( ) );
 //			ParseRelation population = thisRoom.getRelation( "population" );
-			thisRoom.getRelation( getString(R.string.population_literal) ).add( ParseUser.getCurrentUser( ) );
+			thisRoom.getRelation( getString( R.string.population_literal ) ).add( ParseUser.getCurrentUser( ) );
 			thisRoom.saveInBackground( new SaveCallback( ){
 					public void done( ParseException e ) {
 						if( e == null ) {
@@ -344,20 +337,20 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	private void joinRoom( ) {
 		Log.i( MeetSpace.TAG, "joining room at radius " + currentRadius );
 //		ParseQuery roomQuery = ParseQuery.getQuery( "Room" );
-		ParseQuery.getQuery( getString(R.string.Room_literal) )
-		    .whereWithinKilometers( getString(R.string.location_literal), userGeoPoint, MeetSpace.SEARCH_RADIUS[currentRadius] )
-			.whereEqualTo( getString(R.string.network_literal), network_name )
+		ParseQuery.getQuery( getString( R.string.Room_literal ) )
+		    .whereWithinKilometers( getString( R.string.location_literal ), userGeoPoint, MeetSpace.SEARCH_RADIUS[currentRadius] )
+			.whereEqualTo( getString( R.string.network_literal ), network_name )
 			.getFirstInBackground( new GetCallback<ParseObject>( ) {
 				public void done( ParseObject room, ParseException e ) {
 					// comments now contains the comments for posts without images.
 					if( e == null ) {
 						if( thisRoom != null ) {
-//							ParseRelation population = thisRoom.getRelation( "population" );
-							thisRoom.getRelation( getString(R.string.population_literal) ).remove( ParseUser.getCurrentUser( ) );
+							//sign out of the other room
+							thisRoom.getRelation( getString( R.string.population_literal ) ).remove( ParseUser.getCurrentUser( ) );
 						}
 						thisRoom = room;
 //						ParseRelation population = thisRoom.getRelation( "population" );
-						thisRoom.getRelation( getString(R.string.population_literal) ).add( ParseUser.getCurrentUser( ) );
+						thisRoom.getRelation( getString( R.string.population_literal ) ).add( ParseUser.getCurrentUser( ) );
 						thisRoom.saveInBackground( new SaveCallback( ){
 								public void done( ParseException e ) {
 									if( e == null ) {
@@ -372,22 +365,19 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 			} );
 	}
 	private void refreshRoom( ) {
-//		ParseRelation<ParseObject> relation = thisRoom.getRelation( "population" );
-//		ParseQuery query = relation.getQuery( );
-//		query.whereNotEqualTo( network_name + "Id", ParseUser.getCurrentUser( ).get( network_name + "Id" ) );
-		thisRoom.getRelation( getString(R.string.population_literal) )
+		thisRoom.getRelation( getString( R.string.population_literal ) )
 			.getQuery( )
-			.whereNotEqualTo( network_name + getString(R.string.Id_literal), ParseUser.getCurrentUser( ).get( network_name + getString(R.string.Id_literal) ) )
+			.whereNotEqualTo( network_name + getString( R.string.Id_literal ), ParseUser.getCurrentUser( ).get( network_name + getString( R.string.Id_literal ) ) )
 			.findInBackground( new FindCallback<ParseObject>( ){
 			    public void done( List<ParseObject> population, ParseException e ) {
 					if( e == null ) {
 						roomPopulation = population.toArray( new ParseUser[population.size( )] );
 						NUM_MUGS = roomPopulation.length;
-						
-						
+
+
 						/**************Need to create a replacement for this bar function, like a Toast at least, maybe a view inflation?*******/
-						
-//						statusBar.setText( NUM_MUGS==0 ? getString(R.string.noone_home) : "" );
+						roomStatusBar.setText( NUM_MUGS == 0 ? getString( R.string.noone_home ) : getString( R.string.one_home ) );
+						roomStatusBar.setBackgroundColor( NUM_MUGS == 0 ? getResources().getColor( R.color.orange ) : getResources().getColor( R.color.blue ));
 //						Log.i(MeetSpace.TAG, "Setting number of mugs@ " + NUM_MUGS);
 						fbAdapter.notifyDataSetChanged( );
 						twAdapter.notifyDataSetChanged( );
@@ -404,9 +394,9 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	private void setNetwork( int network ) {
 		if( network == MeetSpace.FACEBOOK ) {
 			this.network = MeetSpace.FACEBOOK;
-			this.network_name = getString(R.string.facebook_literal);
+			this.network_name = getString( R.string.facebook_literal );
 		} else if( network == MeetSpace.TWITTER ) {
-			this.network_name = getString(R.string.twitter_literal);
+			this.network_name = getString( R.string.twitter_literal );
 			this.network = MeetSpace.TWITTER;
 		}
 	}
@@ -430,7 +420,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	private void onLogoutButtonClicked( ) {
 		loggingOut = true;
 		if( thisRoom != null ) {
-			ParseRelation population = thisRoom.getRelation( getString(R.string.population_literal) );
+			ParseRelation population = thisRoom.getRelation( getString( R.string.population_literal ) );
 			population.remove( ParseUser.getCurrentUser( ) );
 			thisRoom.saveInBackground( );
 		}
@@ -449,12 +439,12 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	private void facebookLoginButtonClicked( ) {
 		loggingOut = true;
 		if( thisRoom != null ) {
-			ParseRelation population = thisRoom.getRelation( getString(R.string.population_literal) );
+			ParseRelation population = thisRoom.getRelation( getString( R.string.population_literal ) );
 			population.remove( ParseUser.getCurrentUser( ) );
 			thisRoom.saveInBackground( );
 		}
 		ParseUser.logOut( );
-		
+
 		ViewerActivity.this.progressDialog = ProgressDialog.show(
 			ViewerActivity.this, "", "Logging in...", true );
 		List<String> permissions = Arrays.asList( "basic_info", "user_about_me",
@@ -480,7 +470,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	private void twitterLoginButtonClicked( ) {
 		loggingOut = true;
 		if( thisRoom != null ) {
-			ParseRelation population = thisRoom.getRelation( getString(R.string.population_literal) );
+			ParseRelation population = thisRoom.getRelation( getString( R.string.population_literal ) );
 			population.remove( ParseUser.getCurrentUser( ) );
 			thisRoom.saveInBackground( );
 		}
@@ -492,21 +482,21 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 					if( user == null ) Log.d( MeetSpace.TAG, "User cancelled twitter login" );
 					else if( user.isNew( ) ) {
 						Log.d( MeetSpace.TAG, "User signed up and logged in with twitter" );
-						showUserDetailsActivity(MeetSpace.TWITTER);
+						showUserDetailsActivity( MeetSpace.TWITTER );
 					} else { 
 					    Log.d( MeetSpace.TAG, "User signed in with twitter" );
-						showUserDetailsActivity(MeetSpace.TWITTER);
+						showUserDetailsActivity( MeetSpace.TWITTER );
 					}
 				}
 			} );
 	}
-	
+
 	@Override
     public void onBackPressed( ) {
         if( pager.getCurrentItem( ) == 0 ) {
             // If the user is currently looking at the first step, allow the system to handle the
             // Back button. This calls finish() on this activity and pops the back stack.
-            onLogoutButtonClicked();
+            onLogoutButtonClicked( );
         } else {
             // Otherwise, select the previous step.
             pager.setCurrentItem( pager.getCurrentItem( ) - 1 );
@@ -514,10 +504,10 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
     }
 
 	private void showUserDetailsActivity( int network ) {
-		Bundle bundle = new Bundle();
-		bundle.putInt(getString(R.string.network_literal), network);
+		Bundle bundle = new Bundle( );
+		bundle.putInt( getString( R.string.network_literal ), network );
 		Intent intent = new Intent( this, ViewerActivity.class );
-		intent.putExtras(bundle);
+		intent.putExtras( bundle );
 		startActivity( intent );
 	}
 
@@ -672,9 +662,9 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
         @Override
         public Fragment getItem( int position ) {
             TwitterSlidingPageFragment fragment = new TwitterSlidingPageFragment( );
-			fragment.setId( roomPopulation[position].getString( network_name + getString(R.string.Id_literal) ) );
-			fragment.setName( roomPopulation[position].getString( getString(R.string.name_literal) ) );
-			fragment.setCameoURL( roomPopulation[position].getString( getString(R.string.cameo_URL) ) );
+			fragment.setId( roomPopulation[position].getString( network_name + getString( R.string.Id_literal ) ) );
+			fragment.setName( roomPopulation[position].getString( getString( R.string.name_literal ) ) );
+			fragment.setCameoURL( roomPopulation[position].getString( getString( R.string.cameo_URL ) ) );
 			return fragment;
         }
 
