@@ -47,9 +47,12 @@
 	<string name="facebook_literal">facebook</string>
 	<string name="twitter_literal">twitter</string>
 	<string name="twitter_errors">errors</string>
+	<string name="refreshing">Refreshing</string>
 	<string name="nfc_affirm">sent profile information through NFC</string>
 	<string name="nfc_status_on">NFC Pointer Ready</string>
+	<string name="nfc_init">NFC Pointer Write</string>
 	<string name="nfc_status_off">No NFC Radio Found</string>
+	<string name="network_fail">Network Fail</string>
 	<string name="noone_home">No Other Broadcasts</string>
 	<string name="one_home">People Broadcasting</string>
 	<string name="schrodinger_home">Loading Population</string>

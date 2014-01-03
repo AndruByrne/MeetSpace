@@ -51,6 +51,7 @@ import android.widget.*;
 import android.content.res.*;
 import android.app.ProgressDialog;
 import android.app.PendingIntent;
+import android.view.View.*;
 
 public class ViewerActivity extends FragmentActivity implements LocationListener,
 GooglePlayServicesClient.ConnectionCallbacks,
@@ -128,8 +129,8 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 
 			
 		pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
-		intentFilters = new IntentFilter[] {null};
-		techLists = new String[][] { new String[] {null} };
+		intentFilters = new IntentFilter[] {};
+		techLists = new String[][] { new String[] {} };
 		
 		//	pager.setPageTransformer(true, new ZoomOutPageTransformer());
 		fbAdapter = new FacebookSlidePagerAdapter( getSupportFragmentManager( ) );
@@ -146,8 +147,8 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 		if( nfc != null ) {
 			nfc.setNdefPushMessageCallback( this, this );
 			nfc.setOnNdefPushCompleteCallback( this, this );
-			nfcStatusBar.setText( getString( R.string.nfc_status_on ) );
-			nfcStatusBar.setBackgroundColor( res.getColor( R.color.blue ) );			
+			nfcStatusBar.setText( getString( R.string.nfc_init ) );
+			nfcStatusBar.setBackgroundColor( res.getColor( R.color.orange ) );			
 		} else {
 			nfcStatusBar.setText( getString( R.string.nfc_status_off ) );
 			nfcStatusBar.setBackgroundColor( res.getColor( R.color.red ) );						
@@ -226,6 +227,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 		    new Request.GraphUserCallback( ) {
 				@Override
 				public void onCompleted( GraphUser user, Response response ) {
+					//need to null check response here, as well
 					if( user != null ) {
 						String id = user.getId( );
 						ParseUser currentUser = ParseUser.getCurrentUser( );
@@ -263,6 +265,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 
         @Override
         protected void onPostExecute( String response ) {
+			if (response != null){
 			final JsonObject jsonObj = ( new JsonParser( ).parse( response ) ).getAsJsonObject( );
 			String id = jsonObj.get( getString( R.string.id_str_literal ) ).getAsString( );
 			ParseUser currentUser = ParseUser.getCurrentUser( );
@@ -270,7 +273,24 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 			currentUser.put( getString( R.string.name_literal ), jsonObj.get( getString( R.string.screen_name ) ).getAsString( ) );
 			currentUser.put( getString( R.string.cameo_URL ), jsonObj.get( getString( R.string.profile_image_url ) ).getAsString( ).replace( "_normal", "" ) );
 			currentUser.saveInBackground( );
+
 			ndefRecord = NdefRecord.createUri( getString( R.string.twitter_ndef ) + id );
+			nfcStatusBar.setText( nfc == null ? getString( R.string.nfc_status_off ) : getString( R.string.nfc_status_on ));
+			nfcStatusBar.setBackgroundColor( nfc == null ? getResources().getColor(R.color.red): getResources().getColor( R.color.blue ) );			
+				
+			} else {
+				//network fail
+				roomStatusBar.setText( getString( R.string.network_fail ) );
+				roomStatusBar.setClickable(true);
+				roomStatusBar.setOnClickListener( new OnClickListener () {
+					public void onClick( View view ){
+						new GetTwitterId( ).execute( );		
+					    roomStatusBar.setText( getString( R.string.refreshing ) );
+				    }
+				}
+				
+				);
+			}
 		}
 	}
 
@@ -315,7 +335,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 										makeNewRoom( );
 									}
 								} );
-							builder.setNegativeButton( getString(R.string.Join) , new DialogInterface.OnClickListener( ){
+							builder.setNegativeButton( getString( R.string.Join ) , new DialogInterface.OnClickListener( ){
 									public void onClick( DialogInterface dialog, int Id ) {
 										joinRoom( );
 									}
