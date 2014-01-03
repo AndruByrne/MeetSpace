@@ -50,6 +50,7 @@ import android.nfc.*;
 import android.widget.*;
 import android.content.res.*;
 import android.app.ProgressDialog;
+import android.app.PendingIntent;
 
 public class ViewerActivity extends FragmentActivity implements LocationListener,
 GooglePlayServicesClient.ConnectionCallbacks,
@@ -86,8 +87,15 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	private int network;
 	private NdefRecord ndefRecord;
 	private boolean loggingOut = false;
+	public NfcAdapter nfc;
+	private PendingIntent pendingIntent;
+	private String[][] techLists;
+	private IntentFilter[] intentFilters;
 
-
+	public void onNewIntent(Intent intent) {
+//		Tag tagFromIntent = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+		//do something with tagFromIntent
+	}
 
 	@Override
 	protected void onCreate( Bundle savedInstanceState ) {
@@ -118,6 +126,11 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 				public void onClick( View v ) {onLogoutButtonClicked( );}
 			} );
 
+			
+		pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
+		intentFilters = new IntentFilter[] {null};
+		techLists = new String[][] { new String[] {null} };
+		
 		//	pager.setPageTransformer(true, new ZoomOutPageTransformer());
 		fbAdapter = new FacebookSlidePagerAdapter( getSupportFragmentManager( ) );
 		twAdapter = new TwitterSlidePagerAdapter( getSupportFragmentManager( ) );
@@ -129,7 +142,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 		
 		nfcStatusBar = (VerticalAutoFitTextView) findViewById( R.id.nfcStatusBar );
 		nfcStatusBar.setPadding( 128, 0, 128, 32 );		
-		NfcAdapter nfc = NfcAdapter.getDefaultAdapter( this );
+		nfc = NfcAdapter.getDefaultAdapter( this );
 		if( nfc != null ) {
 			nfc.setNdefPushMessageCallback( this, this );
 			nfc.setOnNdefPushCompleteCallback( this, this );
@@ -163,6 +176,8 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 		super.onResume( );
 	    //reset room searching params
 		checkedAbove = false;
+		if( nfc != null )
+		    nfc.enableForegroundDispatch(this, pendingIntent, intentFilters, techLists);
 		// Create a new global location parameters object
 		locationRequest = LocationRequest.create( );
 		locationRequest.setInterval( MeetSpace.TWELVE_SECONDS / 12 )
@@ -182,6 +197,8 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	@Override
 	public void onPause( ) {
 		super.onPause( );
+		if( nfc != null )
+		    nfc.disableForegroundDispatch(this);
 		if( locationClient.isConnected( ) ) {
 			locationClient.removeLocationUpdates( this );
 			locationClient.unregisterConnectionCallbacks( this );
@@ -293,12 +310,12 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 							builder.setMessage( getString( R.string.room_found ) + 
 											   Double.toString( MeetSpace.SEARCH_RADIUS[currentRadius] * 1000 ) + 
 											   getString( R.string.too_large_prompt ) );
-							builder.setPositiveButton( "Yes", new DialogInterface.OnClickListener( ){
+							builder.setPositiveButton( getString( R.string.make_new_room ), new DialogInterface.OnClickListener( ){
 									public void onClick( DialogInterface dialog, int Id ) {
 										makeNewRoom( );
 									}
 								} );
-							builder.setNegativeButton( "No", new DialogInterface.OnClickListener( ){
+							builder.setNegativeButton( getString(R.string.Join) , new DialogInterface.OnClickListener( ){
 									public void onClick( DialogInterface dialog, int Id ) {
 										joinRoom( );
 									}
@@ -379,7 +396,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 //						roomStatusBar = (VerticalAutoFitTextView) findViewById( R.id.roomStatusBar );
 //						roomStatusBar.setPadding( 64, 0, 64, 64 );
 						/**************Need to create a replacement for this bar function, like a Toast at least, maybe a view inflation?*******/
-						roomStatusBar.setText( NUM_MUGS == 0 ? getString( R.string.noone_home ) : getString( R.string.one_home ) );				
+						roomStatusBar.setText( NUM_MUGS == 0 ? getString( R.string.noone_home ) : Integer.toString(NUM_MUGS)+getString( R.string.one_home ) );				
 						roomStatusBar.setBackgroundColor( NUM_MUGS == 0 ? getResources().getColor( R.color.orange ) : getResources().getColor( R.color.blue ));
 //						Log.i(MeetSpace.TAG, "Setting number of mugs@ " + NUM_MUGS);
 						fbAdapter.notifyDataSetChanged( );
