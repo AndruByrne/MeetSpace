@@ -66,6 +66,8 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	private Dialog progressDialog;
 	// For the pager view of Fragments
 	private ViewPager pager;
+	//For the view of self profile fragment
+	private LinearLayout selfProfile;
 	//BUTTONS!!!!
 	private Button logoutButton;
 	private Button loginOtherButton;
@@ -93,7 +95,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	private String[][] techLists;
 	private IntentFilter[] intentFilters;
 
-	public void onNewIntent(Intent intent) {
+	public void onNewIntent( Intent intent ) {
 //		Tag tagFromIntent = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
 		//do something with tagFromIntent
 	}
@@ -110,6 +112,8 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 		pager = (ViewPager) findViewById( R.id.pager );
 		pager.setId( 0x7F04FAF0 );
 
+		selfProfile = (LinearLayout) findViewById( R.id.selfProfile );
+		
 		//	statusBar = (TextView) findViewById(R.id.statusBar);
 		Resources res = getResources( );
 		loginOtherButton = (Button) findViewById( R.id.loginOtherButton );
@@ -127,11 +131,11 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 				public void onClick( View v ) {onLogoutButtonClicked( );}
 			} );
 
-			
-		pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
+
+		pendingIntent = PendingIntent.getActivity( this, 0, new Intent( this, getClass( ) ).addFlags( Intent.FLAG_ACTIVITY_SINGLE_TOP ), 0 );
 		intentFilters = new IntentFilter[] {};
 		techLists = new String[][] { new String[] {} };
-		
+
 		//	pager.setPageTransformer(true, new ZoomOutPageTransformer());
 		fbAdapter = new FacebookSlidePagerAdapter( getSupportFragmentManager( ) );
 		twAdapter = new TwitterSlidePagerAdapter( getSupportFragmentManager( ) );
@@ -140,7 +144,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 		roomStatusBar.setPadding( 64, 0, 64, 64 );
 		roomStatusBar.setText( getString( R.string.is_there_a_home ) );
 		roomStatusBar.setBackgroundColor( res.getColor( R.color.green ) );
-		
+
 		nfcStatusBar = (VerticalAutoFitTextView) findViewById( R.id.nfcStatusBar );
 		nfcStatusBar.setPadding( 128, 0, 128, 32 );		
 		nfc = NfcAdapter.getDefaultAdapter( this );
@@ -178,7 +182,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	    //reset room searching params
 		checkedAbove = false;
 		if( nfc != null )
-		    nfc.enableForegroundDispatch(this, pendingIntent, intentFilters, techLists);
+		    nfc.enableForegroundDispatch( this, pendingIntent, intentFilters, techLists );
 		// Create a new global location parameters object
 		locationRequest = LocationRequest.create( );
 		locationRequest.setInterval( MeetSpace.TWELVE_SECONDS / 12 )
@@ -199,7 +203,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 	public void onPause( ) {
 		super.onPause( );
 		if( nfc != null )
-		    nfc.disableForegroundDispatch(this);
+		    nfc.disableForegroundDispatch( this );
 		if( locationClient.isConnected( ) ) {
 			locationClient.removeLocationUpdates( this );
 			locationClient.unregisterConnectionCallbacks( this );
@@ -222,6 +226,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 		super.onStop( );
 	}
 
+
 	private void getFbId( ) {
 		Request request = Request.newMeRequest( ParseFacebookUtils.getSession( ),
 		    new Request.GraphUserCallback( ) {
@@ -235,6 +240,16 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 						currentUser.put( getString( R.string.name_literal ), user.getName( ) );
 						currentUser.saveInBackground( );
 						ndefRecord = NdefRecord.createUri( getString( R.string.facebook_ndef ) + id );
+						nfcStatusBar.setText( nfc == null ? getString( R.string.nfc_status_off ) : getString( R.string.nfc_status_on ) );
+						nfcStatusBar.setBackgroundColor( nfc == null ? getResources( ).getColor( R.color.red ): getResources( ).getColor( R.color.blue ) );			
+						//link selfProfilePic view here
+					//	ProfilePictureView profilePictureView = (ProfilePictureView) view.findViewById( R.id.profilePicture );
+						//Toast.makeText(this, "Logged In As", Toast.LENGTH_LONG).show();
+						FrameLayout selfView = (FrameLayout) LayoutInflater.from(MeetSpace.getContext()).inflate(R.layout.fb_self_mug, null);
+						ProfilePictureView selfProfilePicture = (ProfilePictureView) selfView.findViewById(R.id.selfProfilePicture);
+						selfProfile.getOrientation();
+						selfProfile.addView( findViewById( R.id.selfProfilePicture ) );
+						selfProfilePicture.setProfileId(id);
 						Log.i( MeetSpace.TAG, "NdefTag" + ndefRecord.toString( ) );
 					} else if( response.getError( ) != null ) {
 						if( ( response.getError( ).getCategory( ) == FacebookRequestError.Category.AUTHENTICATION_RETRY )
@@ -265,30 +280,32 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 
         @Override
         protected void onPostExecute( String response ) {
-			if (response != null){
-			final JsonObject jsonObj = ( new JsonParser( ).parse( response ) ).getAsJsonObject( );
-			String id = jsonObj.get( getString( R.string.id_str_literal ) ).getAsString( );
-			ParseUser currentUser = ParseUser.getCurrentUser( );
-			currentUser.put( network_name + getString( R.string.Id_literal ), id );
-			currentUser.put( getString( R.string.name_literal ), jsonObj.get( getString( R.string.screen_name ) ).getAsString( ) );
-			currentUser.put( getString( R.string.cameo_URL ), jsonObj.get( getString( R.string.profile_image_url ) ).getAsString( ).replace( "_normal", "" ) );
-			currentUser.saveInBackground( );
+			JsonParser jsonParser = new JsonParser( );
+			if( jsonParser!=null ){
+				final JsonObject jsonObj = jsonParser.parse( response ).getAsJsonObject( );
+			//	final JsonObject jsonObj = ( new JsonParser( ).parse( response ) ).getAsJsonObject( );
+				String id = jsonObj.get( getString( R.string.id_str_literal ) ).getAsString( );
+				ParseUser currentUser = ParseUser.getCurrentUser( );
+				currentUser.put( network_name + getString( R.string.Id_literal ), id );
+				currentUser.put( getString( R.string.name_literal ), jsonObj.get( getString( R.string.screen_name ) ).getAsString( ) );
+				currentUser.put( getString( R.string.cameo_URL ), jsonObj.get( getString( R.string.profile_image_url ) ).getAsString( ).replace( "_normal", "" ) );
+				currentUser.saveInBackground( );
 
-			ndefRecord = NdefRecord.createUri( getString( R.string.twitter_ndef ) + id );
-			nfcStatusBar.setText( nfc == null ? getString( R.string.nfc_status_off ) : getString( R.string.nfc_status_on ));
-			nfcStatusBar.setBackgroundColor( nfc == null ? getResources().getColor(R.color.red): getResources().getColor( R.color.blue ) );			
-				
+				ndefRecord = NdefRecord.createUri( getString( R.string.twitter_ndef ) + id );
+				nfcStatusBar.setText( nfc == null ? getString( R.string.nfc_status_off ) : getString( R.string.nfc_status_on ) );
+				nfcStatusBar.setBackgroundColor( nfc == null ? getResources( ).getColor( R.color.red ): getResources( ).getColor( R.color.blue ) );			
+
 			} else {
 				//network fail
 				roomStatusBar.setText( getString( R.string.network_fail ) );
-				roomStatusBar.setClickable(true);
-				roomStatusBar.setOnClickListener( new OnClickListener () {
-					public void onClick( View view ){
-						new GetTwitterId( ).execute( );		
-					    roomStatusBar.setText( getString( R.string.refreshing ) );
-				    }
-				}
-				
+				roomStatusBar.setClickable( true );
+				roomStatusBar.setOnClickListener( new OnClickListener( ) {
+						public void onClick( View view ) {
+							new GetTwitterId( ).execute( );		
+							roomStatusBar.setText( getString( R.string.refreshing ) );
+						}
+					}
+
 				);
 			}
 		}
@@ -376,6 +393,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 		Log.i( MeetSpace.TAG, "joining room at radius " + currentRadius );
 		roomStatusBar.setText( getString( R.string.schrodinger_home ) ) ;
 //		ParseQuery roomQuery = ParseQuery.getQuery( "Room" );
+		Log.e(MeetSpace.TAG, "making query for "+getString( R.string.Room_literal ) );
 		ParseQuery.getQuery( getString( R.string.Room_literal ) )
 		    .whereWithinKilometers( getString( R.string.location_literal ), userGeoPoint, MeetSpace.SEARCH_RADIUS[currentRadius] )
 			.whereEqualTo( getString( R.string.network_literal ), network_name )
@@ -416,8 +434,8 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 //						roomStatusBar = (VerticalAutoFitTextView) findViewById( R.id.roomStatusBar );
 //						roomStatusBar.setPadding( 64, 0, 64, 64 );
 						/**************Need to create a replacement for this bar function, like a Toast at least, maybe a view inflation?*******/
-						roomStatusBar.setText( NUM_MUGS == 0 ? getString( R.string.noone_home ) : Integer.toString(NUM_MUGS)+getString( R.string.one_home ) );				
-						roomStatusBar.setBackgroundColor( NUM_MUGS == 0 ? getResources().getColor( R.color.orange ) : getResources().getColor( R.color.blue ));
+						roomStatusBar.setText( NUM_MUGS == 0 ? getString( R.string.noone_home ) : Integer.toString( NUM_MUGS ) + getString( R.string.one_home ) );				
+						roomStatusBar.setBackgroundColor( NUM_MUGS == 0 ? getResources( ).getColor( R.color.orange ) : getResources( ).getColor( R.color.blue ) );
 //						Log.i(MeetSpace.TAG, "Setting number of mugs@ " + NUM_MUGS);
 						fbAdapter.notifyDataSetChanged( );
 						twAdapter.notifyDataSetChanged( );

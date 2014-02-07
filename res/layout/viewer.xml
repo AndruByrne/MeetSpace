@@ -11,13 +11,23 @@
 		android:layout_height="match_parent"
 		android:orientation="vertical"
 		android:clickable="true"
-		> 
+	> 
 
+	    <LinearLayout
+			android:id="@+id/selfProfile"
+			android:layout_height="0dp"
+			android:layout_width="fill_parent"
+			android:layout_weight="1" 
+			android:layout_gravity="top"
+		>
+		</LinearLayout>
+		
+		
 		<android.support.v4.view.ViewPager
 			android:id="@+id/pager"
 			android:layout_width="match_parent"
 			android:layout_height="0px"
-			android:layout_weight="1" >
+			android:layout_weight="6" >
 		</android.support.v4.view.ViewPager>
 
 		<LinearLayout
@@ -25,8 +35,9 @@
 			android:layout_width="match_parent"
 			android:orientation="horizontal"
 			android:layout_weight="0"
-			android:gravity="center" 
-			android:measureWithLargestChild="true" >
+			android:gravity="center|bottom" 
+			android:measureWithLargestChild="true"
+		    >
 
 			<Button
 				android:id="@+id/loginOtherButton"
@@ -44,7 +55,6 @@
 				android:textStyle="bold"
 				android:text="@string/logout"
 				android:textColor="#fff"
-				android:layout_gravity="center_horizontal"
 			/>
 
 		</LinearLayout>
@@ -69,6 +79,6 @@
 		android:alpha="0.4"
 		android:textStyle="bold"
 		android:textColor="@color/black" />
-	
-	
+
+
 </FrameLayout>

@@ -1,0 +1,18 @@
+<FrameLayout 
+	xmlns:facebook="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_height="fill_parent"
+	android:layout_width="wrap_content"
+    android:layout_marginTop="20dp"
+	android:gravity="top"
+	
+    android:orientation="horizontal">
+	<com.facebook.widget.ProfilePictureView
+		android:id="@+id/selfProfilePicture"
+		android:layout_height="0dp"
+		android:layout_width="match_parent"
+		android:layout_gravity="right"
+		android:layout_weight="6"
+	/>
+	
+</FrameLayout>
