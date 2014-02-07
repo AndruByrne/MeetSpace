@@ -34,7 +34,7 @@ import android.util.Log;
 public class Utils {
 
 	private static final String TAG = Utils.class.getSimpleName();
-	private static String xyz = "6aa4df5d2bc0cf008506386b5a4897be";  //AES key created by makeAES
+	private static String xyz = "987731691433d512583be7d53543786d";  //AES key created by makeAES
 
 	public static String deString (InputStream  input) {
 		String clearText = null;
@@ -44,7 +44,7 @@ public class Utils {
 			byte[] ciphertext = IOUtils.toByteArray(input);
 			aes.init(Cipher.DECRYPT_MODE, getKey());
 			clearText = new String(aes.doFinal(ciphertext));
-			//	Log.d(TAG,"ClearText:" + cleartext);
+				Log.d(TAG,"ClearText:" + clearText);
 		} catch (NoSuchAlgorithmException e) {
 			Log.e (TAG, e.getMessage());
 		} catch (NoSuchPaddingException e) {
@@ -100,14 +100,14 @@ public class Utils {
 
 		try {
 
-			String passphrase = "Somekeythat you would like";  //  Make your own phase phrase
+			String passphrase = "passphrase";  //  passphrase
 			MessageDigest digest = MessageDigest.getInstance("SHA");
 			digest.update(passphrase.getBytes());
 			SecretKeySpec key = new SecretKeySpec(digest.digest(), 0, 16, "AES"); 
 			byte[] encoded = key.getEncoded();
 			String keyOutput = new BigInteger(1, encoded).toString(16);
 			Log.d(TAG,"ChipherKey:" + keyOutput);
-			FileUtil.writeText (FileUtil.getFileInExternalCacheDir("key", context), keyOutput);
+			FileUtil.writeText (FileUtil.getFileInExternalFileDir("key", context), keyOutput);
 		} catch (NoSuchAlgorithmException e) {
 			Log.e (TAG, e.getMessage());
 		}
@@ -123,7 +123,7 @@ public class Utils {
 
 		FileOutputStream output;
 		try {
-			output = new FileOutputStream(new File(FileUtil.getFileInExternalCacheDir("cipherText", context)));
+			output = new FileOutputStream(new File(FileUtil.getFileInExternalFileDir("cipherText", context)));
 			eString (output, clearText);
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block

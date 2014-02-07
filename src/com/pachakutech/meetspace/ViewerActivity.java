@@ -248,7 +248,7 @@ NfcAdapter.CreateNdefMessageCallback, NfcAdapter.OnNdefPushCompleteCallback {
 						FrameLayout selfView = (FrameLayout) LayoutInflater.from(MeetSpace.getContext()).inflate(R.layout.fb_self_mug, null);
 						ProfilePictureView selfProfilePicture = (ProfilePictureView) selfView.findViewById(R.id.selfProfilePicture);
 						selfProfile.getOrientation();
-						selfProfile.addView( findViewById( R.id.selfProfilePicture ) );
+						selfProfile.addView( selfView );
 						selfProfilePicture.setProfileId(id);
 						Log.i( MeetSpace.TAG, "NdefTag" + ndefRecord.toString( ) );
 					} else if( response.getError( ) != null ) {

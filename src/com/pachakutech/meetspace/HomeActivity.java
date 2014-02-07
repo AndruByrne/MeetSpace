@@ -18,6 +18,8 @@ import com.parse.ParseException;
 import com.parse.ParseFacebookUtils;
 import com.parse.ParseUser;
 import com.parse.*;
+import android.content.*;
+
 
 public class HomeActivity extends Activity {
 
@@ -46,6 +48,7 @@ public class HomeActivity extends Activity {
 				}
 			} );
 		
+//    	Utils.saveChipherText(MeetSpace.getContext(), "");
 
 		// Check if there is a currently logged in user
 		// and they are linked to a Facebook account.

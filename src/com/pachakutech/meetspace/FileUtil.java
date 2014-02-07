@@ -27,15 +27,15 @@ public class FileUtil
 		}
 	}
 	
-	public static String getFileInExternalCacheDir( String file, String subDir, Context context ) {
+	public static String getFileInExternalFileDir( String file, String subDir, Context context ) {
 		
-		String string = context.getExternalCacheDir().toString()+"/"+subDir+"/"+file;
+		String string = context.getExternalFilesDir(null).toString()+"/"+subDir+"/"+file;
 		Log.i(TAG, "File named: " + string);
 		return string;
 	}
 
-	public static String getFileInExternalCacheDir( String file, Context context ) {
-		String string = context.getExternalCacheDir().toString()+"/"+file;
+	public static String getFileInExternalFileDir( String file, Context context ) {
+		String string = context.getExternalFilesDir(null).toString()+"/"+file;
 		Log.i(TAG, "File named: " + string);
 		return string;
 	}

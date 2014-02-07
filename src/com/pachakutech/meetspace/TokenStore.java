@@ -20,7 +20,7 @@ public class TokenStore {
 
 	public String getToken(Context context, String tokenName) {
 		if (token == null) {
-			String inFile = FileUtil.getFileInExternalCacheDir (tokenName, "tokens", context);
+			String inFile = FileUtil.getFileInExternalFileDir (tokenName, "tokens", context);
 			File file = new File(inFile);
 			InputStream inStream = null;
 			if (file.exists()) {
@@ -40,7 +40,7 @@ public class TokenStore {
 
 	public void setToken(Context context, String tokenName, String token) {
 		this.token = token;
-		String outFile = FileUtil.getFileInExternalCacheDir (tokenName, "tokens", context);
+		String outFile = FileUtil.getFileInExternalFileDir (tokenName, "tokens", context);
 		FileUtil.mkDirIfNotExtant (outFile);
 		OutputStream outStream = null;
 		try {

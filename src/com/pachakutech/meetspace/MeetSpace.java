@@ -7,7 +7,10 @@ import com.parse.ParseFacebookUtils;
 import android.content.*;
 import com.parse.*;
 import com.bugsense.trace.*;
-
+import android.content.res.*;
+import java.io.*;
+import android.util.*;
+import android.content.Context;
 
 public class MeetSpace extends Application {
 //Hotel Utah 415.495.0617
@@ -37,28 +40,32 @@ public class MeetSpace extends Application {
 	protected static final int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
     protected static final double[] SEARCH_RADIUS = {.001, .004, .008, .016, .032, .064, .096, .2, .4, .8, 1.4, 2};
 	protected static final int TWELVE_SECONDS = 12000;
-	
+
     private volatile static Context context;
 	@Override
-	public void onCreate() {
-		super.onCreate();
-		Parse.initialize(this, "MGLk8RjoPAXV5Ct2jJynl77xl8XHq4VyTtfWETtf", 
-		        "7CWwbI90dM5Yf8VBagfLEREhD2rvW7ZKwSwONzCr"); 
-		ParseTwitterUtils.initialize(getString(R.string.tw_app_id), getString(R.string.tw_app_sec));
+	public void onCreate( ) {
+		super.onCreate( );
+		AssetManager assetManager = this.getAssets( );
+
+		try {
+			Parse.initialize( this, Utils.deString( assetManager.open( "parse_keepsake" ) ), 
+							 Utils.deString( assetManager.open( "parse_seek" ) ) );
+		} catch(IOException e) {Log.e( TAG, "error handling Parse keys " + e.toString( ) );} 
+		ParseTwitterUtils.initialize( getString( R.string.tw_app_id ), getString( R.string.tw_app_sec ) );
 
 		/// Set your Facebook App Id in strings.xml
-		ParseFacebookUtils.initialize(getString(R.string.fb_app_id));
-		BugSenseHandler.initAndStartSession(MeetSpace.this, "6878627a");
-		MeetSpace.context = getApplicationContext();
-		
+		ParseFacebookUtils.initialize( getString( R.string.fb_app_id ) );
+		BugSenseHandler.initAndStartSession( MeetSpace.this, "6878627a" );
+		MeetSpace.context = getApplicationContext( );
+
 	}
-	public static Context getContext(){
+	public static Context getContext( ) {
 		return MeetSpace.context;
 	}
 
 	@Override
 	public void onTerminate( ) {
-		BugSenseHandler.closeSession(MeetSpace.this);
+		BugSenseHandler.closeSession( MeetSpace.this );
 		super.onTerminate( );
 	}
 
